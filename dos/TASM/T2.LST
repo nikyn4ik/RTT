@@ -1,0 +1,187 @@
+Turbo Assembler	 Version 4.1	    12/02/23 20:46:03	    Page 1
+t2.asm
+
+
+
+      1				     ; Program:	graph.asm
+      2	0000			     .MODEL small
+      3	0000			     .STACK 256
+      4
+      5	0000			     .DATA
+      6
+      7	0000			     .CODE
+      8
+      9	0000  EB 0D 90		     jmp start
+     10				     ;=========================================
+     11				     ; Basic program to	draw a circle
+     12				     ;=========================================
+     13	0003  12		      mode db 18 ;640 x	480
+     14	0004  012C		      x_center dw 300
+     15	0006  00C8		      y_center dw 200
+     16	0008  0000		      y_value dw 0
+     17	000A  0064		      x_value dw 100
+     18	000C  0001		      decision dw 1
+     19	000E  01		      colour db	1 ;1=blue
+     20				     ;=========================================
+     21	000F			     start:
+     22	000F  B4 00		      mov ah,00	;subfunction 0
+     23	0011  2E: A0 0003r	      mov al,mode ;select mode 18
+     24	0015  CD 10		      int 10h ;call graphics interrupt
+     25				     ;==========================
+     26	0017  2E: 8B 1E	000Ar	      mov bx, x_value
+     27	001C  2E: 29 1E	000Cr	      sub decision, bx
+     28	0021  2E: A0 000Er	      mov al,colour ;colour goes in al
+     29	0025  B4 0C		      mov ah,0ch
+     30
+     31	0027			     drawcircle:
+     32	0027  2E: A0 000Er	      mov al,colour ;colour goes in al
+     33	002B  B4 0C		      mov ah,0ch
+     34
+     35	002D  2E: 8B 0E	000Ar	      mov cx, x_value ;Octonant	1
+     36	0032  2E: 03 0E	0004r	      add cx, x_center ;( x_value + x_center,  y_value + y_center)
+     37	0037  2E: 8B 16	0008r	      mov dx, y_value
+     38	003C  2E: 03 16	0006r	      add dx, y_center
+     39	0041  CD 10		      int 10h
+     40
+     41	0043  2E: 8B 0E	000Ar	      mov cx, x_value ;Octonant	4
+     42	0048  F7 D9		      neg cx
+     43	004A  2E: 03 0E	0004r	      add cx, x_center ;( -x_value + x_center,	y_value	+ y_center)
+     44	004F  CD 10		      int 10h
+     45
+     46				      ;mov cx, y_value ;Octonant 2
+     47				      ;add cx, x_center	;( y_value + x_center,	x_value	+ y_center)
+     48				      ;mov dx, x_value
+     49				      ;add dx, y_center
+     50				      ;int 10h
+     51
+     52	0051  2E: 8B 0E	0008r	      mov cx, y_value ;Octonant	3
+     53	0056  F7 D9		      neg cx
+     54	0058  2E: 03 0E	0004r	      add cx, x_center ;( -y_value + x_center,	x_value	+ y_center)
+     55	005D  CD 10		      int 10h
+     56
+     57	005F  2E: 8B 0E	000Ar	      mov cx, x_value ;Octonant	7
+Turbo Assembler	 Version 4.1	    12/02/23 20:46:03	    Page 2
+t2.asm
+
+
+
+     58	0064  2E: 03 0E	0004r	      add cx, x_center ;( x_value + x_center,  -y_value	+ y_center)
+     59	0069  2E: 8B 16	0008r	      mov dx, y_value
+     60	006E  F7 DA		      neg dx
+     61	0070  2E: 03 16	0006r	      add dx, y_center
+     62	0075  CD 10		      int 10h
+     63
+     64	0077  2E: 8B 0E	000Ar	      mov cx, x_value ;Octonant	5
+     65	007C  F7 D9		      neg cx
+     66	007E  2E: 03 0E	0004r	      add cx, x_center ;( -x_value + x_center,	-y_value + y_center)
+     67	0083  CD 10		      int 10h
+     68
+     69	0085  2E: 8B 0E	0008r	      mov cx, y_value ;Octonant	8
+     70	008A  2E: 03 0E	0004r	      add cx, x_center ;( y_value + x_center,  -x_value	+ y_center)
+     71	008F  2E: 8B 16	000Ar	      mov dx, x_value
+     72	0094  F7 DA		      neg dx
+     73	0096  2E: 03 16	0006r	      add dx, y_center
+     74	009B  CD 10		      int 10h
+     75
+     76	009D  2E: 8B 0E	0008r	      mov cx, y_value ;Octonant	6
+     77	00A2  F7 D9		      neg cx
+     78	00A4  2E: 03 0E	0004r	      add cx, x_center ;( -y_value + x_center,	-x_value + y_center)
+     79	00A9  CD 10		      int 10h
+     80
+     81	00AB  2E: FF 06	0008r	      inc y_value
+     82
+     83	00B0			     condition1:
+     84	00B0  2E: 83 3E	000Cr 00      cmp decision,0
+     85	00B6  77 24		      ja condition2
+     86	00B8  2E: 8B 0E	0008r	      mov cx, y_value
+     87	00BD  B8 0002		      mov ax, 2
+     88	00C0  F7 E9		      imul cx
+     89	00C2  83 C1 01		      add cx, 1
+     90	00C5  41		      inc cx
+     91	00C6  2E: 01 0E	000Cr	      add decision, cx
+     92	00CB  2E: 8B 1E	0008r	      mov bx, y_value
+     93	00D0  2E: 8B 16	000Ar	      mov dx, x_value
+     94	00D5  3B DA		      cmp bx, dx
+     95	00D7  77 2E		      ja readkey
+     96	00D9  E9 FF4B		      jmp drawcircle
+     97
+     98	00DC			     condition2:
+     99	00DC  2E: FF 0E	000Ar	      dec x_value
+    100	00E1  2E: 8B 0E	0008r	      mov cx, y_value
+    101	00E6  2E: 2B 0E	000Ar	      sub cx, x_value
+    102	00EB  B8 0002		      mov ax, 2
+    103	00EE  F7 E9		      imul cx
+    104	00F0  41		      inc cx
+    105	00F1  2E: 01 0E	000Cr	      add decision, cx
+    106	00F6  2E: 8B 1E	0008r	      mov bx, y_value
+    107	00FB  2E: 8B 16	000Ar	      mov dx, x_value
+    108	0100  3B DA		      cmp bx, dx
+    109	0102  77 03		      ja readkey
+    110	0104  E9 FF20		      jmp drawcircle
+    111
+    112
+    113
+    114				     ;==========================
+Turbo Assembler	 Version 4.1	    12/02/23 20:46:03	    Page 3
+t2.asm
+
+
+
+    115	0107			     readkey:
+    116	0107  B4 00		      mov ah,00
+    117	0109  CD 16		      int 16h ;wait for	keypress
+    118				     ;==========================
+    119	010B			     endd:
+    120	010B  B4 00		      mov ah,00	;again subfunc 0
+    121	010D  B0 03		      mov al,03	;text mode 3
+    122	010F  CD 10		      int 10h ;call int
+    123	0111  B4 4C		      mov ah,04ch
+    124	0113  B0 00		      mov al,00	;end program normally
+    125	0115  CD 21		      int 21h
+    126
+    127				     END Start
+Turbo Assembler	 Version 4.1	    12/02/23 20:46:03	    Page 4
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "12/02/23"
+??FILENAME			  Text	 "t2	  "
+??TIME				  Text	 "20:46:03"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 _TEXT
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 T2
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 2
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+COLOUR				  Byte	 _TEXT:000E
+CONDITION1			  Near	 _TEXT:00B0
+CONDITION2			  Near	 _TEXT:00DC
+DECISION			  Word	 _TEXT:000C
+DRAWCIRCLE			  Near	 _TEXT:0027
+ENDD				  Near	 _TEXT:010B
+MODE				  Byte	 _TEXT:0003
+READKEY				  Near	 _TEXT:0107
+START				  Near	 _TEXT:000F
+X_CENTER			  Word	 _TEXT:0004
+X_VALUE				  Word	 _TEXT:000A
+Y_CENTER			  Word	 _TEXT:0006
+Y_VALUE				  Word	 _TEXT:0008
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  STACK				  16  0100 Para	  Stack	  STACK
+  _DATA				  16  0000 Word	  Public  DATA
+_TEXT				  16  0117 Word	  Public  CODE
+
