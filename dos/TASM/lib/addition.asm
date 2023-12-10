@@ -1,64 +1,6 @@
+; .386
 
-; создание процедур ; занимает меньше времени и больше памяти
-printString PROC ; напечатать массив байт
-    ; ARG string:WORD
-    ; MOV dx, [string]
-    ; print string
-    MOV ah, 09h
-    int 21h
-
-    ; new line
-	MOV dl, 10
-	MOV ah, 02h
-	INT 21h
-	MOV dl, 13
-	MOV ah, 02h
-	INT 21h
-    RET
-printString ENDP
-
-printSymbol proc ; напечатать символ
-	mov ah, 02h
-	int 21h
-    ; new line
-	MOV dl, 10
-	MOV ah, 02h
-	INT 21h
-	MOV dl, 13
-	MOV ah, 02h
-	INT 21h
-	RET
-printSymbol endp
-
-
-openFile proc   ; дескриптор файла при открытии вернется в регистр AX
-	mov ah, 3dh ; функция открытия файла
-	mov al, 0   ; читать
-	mov dx, offset FileName ; имя файла
-	int 21h     ; выполнить
-	RET         ; вернуть управление в точку запуска
-openFile endp
-
-readFile proc   ; Код ошибки если CF установлен к CY; если ошибок не было то в AX будет количество прочитанных байт
-	mov ah, 3fh ; функция чтения файла
-	mov cx, 14h ; сколько байт прочитать
-	mov dx, offset Buffer ; То что будем читать
-	int 21h     ; выполнить
-	call printString		
-	ret
-readFile endp
-
-writeFile proc
-
-	ret
-writeFile endp
-; в BX дескриптор файла, т.е то что было при открытии нужно вернуть в bx -> mov bx, ax
-closeFile proc
-	mov ah, 3eh ; функция закрытия файла
-	int 21h
-	RET
-closeFile endp
-
+; это тестовые функции некоторые будут использоваться в основной программе
 
 fun1 PROC  
 	mov dl,'-'
@@ -67,7 +9,7 @@ fun1 PROC
 	mov dl,'>'
 	mov ah,02h
 	int 21h
-	ret
+	RET
 fun1 ENDP
 
 
@@ -81,7 +23,7 @@ fun2 proc
 	mov dl, @@a2
 	mov ah, 02h
 	int 21h
-	ret
+	RET
 fun2 endp
 
 ; in 	регистр,ном_порта   	ввод значения из порта ввода-вывода
@@ -103,3 +45,62 @@ endm
 
 
 
+
+;Clearing screen
+clearScreen proc
+    ; MOV AH, 0 
+    ; MOV AL, 2 
+    mov ax, 02
+    INT 10H 
+    RET
+clearScreen endp
+
+exit proc
+	mov ah, 04ch ; функция DOS выхода из программы
+	mov al, 0h 	; код возврата
+	int 21h ; Вызов DOS остановка программы
+exit endp
+
+
+
+clearBuffer proc
+	push ax
+	push bx
+	push cx
+	push dx
+
+	mov cx, buffer_len
+	mov bx, offset buffer
+l1:		
+	mov al, [bx]
+	mov al, 0
+	mov [bx], al
+	inc bx
+	loop l1
+
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+clearBuffer endp
+
+GetMouseState proc 
+	mov  ax, 3       ;SERVICE TO GET MOUSE STATE.
+	int  33h
+	ret
+GetMouseState endp 
+
+
+
+
+
+
+
+
+
+getRandomNums proc
+
+
+	ret
+getRandomNums endp

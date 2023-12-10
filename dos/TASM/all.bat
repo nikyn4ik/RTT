@@ -1,12 +1,11 @@
 @echo off
-cls
-
 rem --------------------------------
 echo ------ Assembling... -------------------------------------------------
 rem echo.
 rem /zi, которая включает полную информацию для отладчика
 rem /iпуть
 TASM.EXE /zi /ilib %1.asm
+rem TASM.EXE /ilib %1.asm
 rem rem IF errorlevel 1 goto err_end
 rem echo ------ Assembling completed succesfully ------------------------------
 rem echo.
@@ -20,6 +19,7 @@ rem echo.
 rem TLINK.EXE -M -V %1.obj
 rem /v, которая говорит о том, что в проект нужно включить полную информацию
 TLINK.EXE /v %1.obj
+rem TLINK.EXE %1.obj
 rem IF errorlevel 1 goto err_end
 rem echo.
 rem echo ------ Linking completed succesfully ---------------------------------
