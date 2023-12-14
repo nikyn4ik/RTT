@@ -135,9 +135,19 @@ _DATA segment; .data, DATASEG
 	msj     db 'score!$'
 	hyphen  db '-$'
 	clear   db '       $' ;CLEAR LINE.
-	numstr  db '$$$$$'    ;STRING FOR 4 DIGITS.
+	numstr  db '$$$$$$'    ;STRING FOR 4 DIGITS.
 
+	random dw ?
+	randomX dw ?
+	randomY dw ?
+	randomColor dw ?
+	randomFigure dw ?
 
+	HelloString   DB   'HELLO1!',0dh,0ah,0
+
+	isNew db ?
+
+	game_point db 0
 
 _DATA ends
 
@@ -162,16 +172,16 @@ start: ; .startup
 
 	; без знака
 	; 8bit 
-	mov cl, -3 ; #1
-	mov bh, 2 ; #2
-	mov al, bh
-	mul cl ; #2 * #1 -> res in ax
+	; mov cl, -3 ; #1
+	; mov bh, 2 ; #2
+	; mov al, bh
+	; mul cl ; #2 * #1 -> res in ax
 
-	; умножение
-	mov ax, 200
-	mul ax ; АХ*АХ —> DX:AX
-	mov dx, ax
-	add dx, '0'
+	; ; умножение
+	; mov ax, 200
+	; mul ax ; АХ*АХ —> DX:AX
+	; mov dx, ax
+	; add dx, '0'
 
 
 
@@ -233,192 +243,136 @@ start: ; .startup
 
 
 
-
+	
 	; mov ah, 00 ; subfunction 0
 	; mov al, 18h ; select mode 18 ;640 x 480
 	; int 10h    ; call graphics interrupt
 	; mov ax, 13h 
 	; int 10h                 ;mode 13h 
+
+	; call DotOne
+
+; проверяем нажали ли мы клавишу или нет и записываем координаты мыши в x_mouse, y_mouse
+
+	; call drawRandomFigure
+
+draw1:
 	call setResulutionVGA40 ;
-
-
 	call SetCursor ; mouse input
-	call DotOne
+
+	push 620
+	call getRandom
+	mov ax, random
+	mov randomX, ax
+
+	push 460
+	call getRandom
+	mov ax, random
+	mov randomY, ax
+
+	push 16
+	call getRandom
+	mov ax, random
+	mov randomColor, ax
+
+	push 4
+	call getRandom
+	mov ax, random
+	mov randomFigure, ax
 
 
-	push 14 ; color ; https://s7a1k3r.narod.ru/4.html
-	push 25 ; x
-	push 25 ; y
-	push 50 ; width
-	push 50; height
+	cmp randomFigure, 1
+	je f0
+
+	cmp randomFigure, 2
+	je f1
+
+	cmp randomFigure, 3
+	je f2
+
+f0:
+	push randomX ; x
+	push randomY ; y
+	push 5  ; половина диагонали по оси y
+	push randomColor  ; color
+	call drawThromb
+	jmp fexit
+f1:
+	push randomColor ; color ; https://s7a1k3r.narod.ru/4.html
+	push randomX ; x
+	push randomY ; y
+	push 10 ; width
+	push 10; height
 	call drawSquare
-	; add sp, 10
-
-	push 1
-	call delay
-
-	; push 14
-	; push 100 ; x center
-	; push 120 ; y center
-	; push 30  ; x_value
-	; push 0   ; y_value
-	; call drawThromb
-
-
-
-	push 500 ; start point x
-	push 210 ; start point y
-	push 60  ; width
-	push 2   ; color
+	jmp fexit
+f2:
+	push randomX ; start point x
+	push randomY ; start point y
+	push 10  ; width
+	push randomColor   ; color
 	call drawTriangle
 
+fexit:
 
-	push 1
-	call delay
+	; push 16
+	; call getRandom
+	; mov ax, random
 
-	push 257 ; x
-	push 300 ; y
-	push 20  ; xd
-	push 12  ; color
-	call drawThromb
-
-
-
-	push 1
-	call delay
+	; mov si, offset numstr
+	; call number2string
+	; mov dx, offset numstr
+	; call printString
 
 
-
-	mov radius, 20 ; Радиус нашего круга.
-	mov xx0, 80    ; Номер строки, в котором будет находится центр круга
-	mov yy0, 80    ; Номер столбца, в котором будет находится центр круга
-	call DrawCircle3
+	; mov radius, 20 ; Радиус нашего круга.
+	; mov xx0, 180    ; Номер строки, в котором будет находится центр круга
+	; mov yy0, 180    ; Номер столбца, в котором будет находится центр круга
+	; call DrawCircle3
 
 
 
-	call waitKey ; для задержки т.е. 
-
-
+; проверяем нажали ли мы клавишу или нет и записываем координаты мыши в x_mouse, y_mouse
 DotGame:
-	mov  bx, 1          ;CHECK RIGHT BUTTON (USE 0 TO CHECK LEFT BUTTON).
+	mov  bx, 0          ;CHECK RIGHT BUTTON (USE 0 TO CHECK LEFT BUTTON).
 	call GetMouseState
-	and  bx, 00000010b  ;CHECK SECOND BIT (BIT 1).
+	and  bx, 00000001b  ;CHECK SECOND BIT (BIT 1).
 	jz   DotGame        ;NO RIGHT CLICK. REPEAT.
 
 	mov  x_mouse, cx          ;PRESERVE X AND Y BECAUSE
 	mov  y_mouse, dx          ;CX DX WILL BE DESTROYED.                  
-	call display_coords
+	; call display_coords
+	; push randomColor
+	call checkColorPixel
 
-	;cmp  bx, 01 ; check if left mouse was clicked
-	;je   Check_X_Cords
-	 ;check if the player clicked the dot cords
+	cmp isNew, 1
+	je ok1
+	jmp DotGame
 
-	Check_X_Cords:
-	mov  cx, x_mouse
-	cmp  cx, XCords1
-	je   Check_Y_Cords
+ok1: ; успех мы нажали на фигурку
+	inc game_point
+	cmp game_point, 10
+	je stop_game
+	mov isNew, 0 ; сброс чекпоинта
+	jmp draw1 ; рисуем новую фигуру
+	; jmp DotGame
 
-	jmp  DotGame       ; WRONG COLUMN. REPEAT.
+stop_game:
+	call waitKey ; для задержки т.е. 
+	; cmp  bx, 01 ; check if left mouse was clicked
+	; je   Check_X_Cords
+	; check if the player clicked the dot cords
 
-	Check_Y_Cords:
-	mov  dx, y_mouse
-	cmp  dx, YCords1
-	je   ScoreLabel
-
-	jmp  DotGame       ; WRONG ROW. REPEAT.
-
-ScoreLabel:
-	inc [score]               
-	;DISPLAY "SCORE!".
-	mov ah, 9
-	mov dx, offset msj
-	int 21h
-	jmp DotGame       ; REPEAT.
+; ScoreLabel:
+; 	inc [score]               
+; 	;DISPLAY "SCORE!".
+; 	mov ah, 9
+; 	mov dx, offset msj
+; 	int 21h
+; 	jmp DotGame       ; REPEAT.
 	; call drawCircle
 	; call drawCircle1
 
 
-; 	mov cx, 13
-; loop1:
-; 	push cx
-; 	push color_square ; color ; https://s7a1k3r.narod.ru/4.html
-; 	push xs ; x тут передаём параметры
-; 	push ys ; y
-; 	push xe ; width
-; 	push ye; height
-; 	call drawSquare ; тут вызываем квадрат
-
-; 	pop cx
-; 	add xs, 50
-; 	add xe, 50
-; 	dec color_square
-; 	loop loop1
-
-; 	inc counter
-; 	cmp counter, 5
-; 	JE scip_loop
-
-; 	add ys, 50
-; 	add ye, 50
-; 	mov xs, 0
-; 	mov xe, 50
-; 	mov cx, 13
-; 	jmp loop1
-
-
-; scip_loop:
-
-
-	; call drawThromb
-
-
-
-
-    ; call drawThromb
-	; mov al, 0
-
-	; call startTime
-	; push 13 ; color ; https://s7a1k3r.narod.ru/4.html
-	; push 40 ; x
-	; push 40 ; y
-	; push 10 ; width
-	; push 10 ; height
-	; call drawSquare
-	; add sp, 10
-	; push 14 ; color ; https://s7a1k3r.narod.ru/4.html
-	; push 50 ; x
-	; push 50 ; y
-	; push 100 ; width
-	; push 100 ; height
-	; call drawSquare
-	; add sp, 10
-
-	; call drawThromb
-
-
-
-
-
-
-	; call setResulutionVGA40
-
-
-
-
-	; mov cx,32000d    ; you can write 320 * 200/2 in your source if you want
-	; cld
-	; xor ax,ax
-	; rep stosw     
-
-
-    ; call clearScreen
-	; call setResulutionVBE42
-	;Draw pixel
-	; mov ax, 0c09h    ;09h = Blue
-	; mov cx, 2 
-	; mov dx, 3     
-	; xor bx, bx   
-	; int 10h
 
 
 	; if nothing happy
@@ -603,7 +557,7 @@ ScoreLabel:
 
 
  
- 	call exit
+ 	; call exit
  	
 _TEXT ends
 

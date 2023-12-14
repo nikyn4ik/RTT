@@ -177,16 +177,166 @@ delay_loop:
 delay endp
 
 
+; getRandom proc
+; xor ah,ah  ; ah = 0
+; int 1Ah    ; returns in cx:dx ticks since midnight (18.2Hz ticks)
+; ; let's mix the cx:dx a bit together to get a bit more entropy out of it
+
+
+; rol cx, 8
+; mov dx, cx
+; add dx, '0'
+; call printString
+; ret
+; getRandom endp
+
 getRandom proc
+    push bp
+    mov bp, sp
+    push ax
+    push bx
+    push cx
+    push dx
 
-xor ah,ah  ; ah = 0
-int 1Ah    ; returns in cx:dx ticks since midnight (18.2Hz ticks)
-; let's mix the cx:dx a bit together to get a bit more entropy out of it
+
+    xor ax, ax
+    xor ah, ah
+    mov es, ax
+    mov ax, es:[46Ch]
 
 
-rol cx, 8
-mov dx, cx
-add dx, '0'
-call printString
-ret
+    cmp [bp+4], 16 ; условие для псевдорандомности - запутывание чисел таймера
+    jne no_equel
+    je equel
+no_equel:
+    ; rol ax, 2
+    ; ror ax, 2
+    mul ax
+    mov al, ah
+    mov ah, dl 
+
+equel:
+    xor dx, dx
+    mov bx, [bp+4]
+    div bx
+    ; cmp [bp+4], 460
+    ; je addition3
+    ; cmp [bp+4], 620
+    ; je addition3
+
+
+    cmp dx, 0 ; условие для цвета - чтобы не меньше 1
+    je addition1
+    jne addition2
+addition1:
+    inc dx
+addition2:
+    mov random, dx
+    jmp stop11
+; addition3:
+;     cmp dx, 20
+;     jb sub_pease
+;     jnb stop11
+; sub_pease:
+;     add dx, 20
+;     mov random, dx
+stop11:
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    mov sp, bp
+    pop bp
+    ret 2
 getRandom endp
+
+
+; getRandom16 proc
+;     push bp
+;     mov bp, sp
+;     push ax
+;     push bx
+;     push cx
+;     push dx
+
+
+;     xor ax, ax
+;     xor ah, ah
+;     mov es, ax
+;     mov ax, es:[46Ch]
+;     xor dx, dx
+;     mov bx, 16
+;     div bx
+
+;     cmp dx, 0
+;     je addition1
+;     jne addition2
+; addition1:
+;     inc dx
+; addition2:
+;     mov random, dx
+
+;     pop dx
+;     pop cx
+;     pop bx
+;     pop ax
+;     mov sp, bp
+;     pop bp
+;     ret
+; getRandom16 endp
+
+
+; getRandom480 proc
+;     push bp
+;     mov bp, sp
+;     push ax
+;     push bx
+;     push cx
+;     push dx
+
+
+;     xor ax, ax
+;     xor ah, ah
+;     mov es, ax
+;     mov ax, es:[46Ch]
+;     xor dx, dx
+;     mov bx, 480
+;     div bx
+;     mov random, dx
+
+;     pop dx
+;     pop cx
+;     pop bx
+;     pop ax
+;     mov sp, bp
+;     pop bp
+;     ret
+; getRandom480 endp
+
+
+; getRandom640 proc
+;     push bp
+;     mov bp, sp
+;     push ax
+;     push bx
+;     push cx
+;     push dx
+
+
+;     xor ax, ax
+;     xor ah, ah
+;     mov es, ax
+;     mov ax, es:[46Ch]
+;     xor dx, dx
+;     mov bx, 640
+;     div bx
+;     mov random, dx
+
+;     pop dx
+;     pop cx
+;     pop bx
+;     pop ax
+;     mov sp, bp
+;     pop bp
+;     ret
+; getRandom640 endp

@@ -9,17 +9,22 @@ drawSquare proc
 	mov al, [bp+12]  ; color 
 	mov ah, 0ch      ; put pixel
 
+	mov si, [bp+6] ; x end - bp+6
+	add si, [bp+10]
+	mov di, [bp+4] ; y end - bp+4
+	add di, [bp+8]
+
 	colcount:
 	inc cx
 
 	int 10h
-	cmp cx, [bp+6]   ; x end
+	cmp cx, si   ; x end
 	JNE colcount
 
 	
 	mov cx, [bp+10]  ; reset to start of col
 	inc dx           ; next row
-	cmp dx, [bp+4]   ; y end
+	cmp dx, di   ; y end
 	JNE colcount
 
 	mov sp, bp
@@ -378,3 +383,51 @@ tstep:
 	jmp ccicle
 drawCircle3 endp
 
+drawRandomFigure proc
+	; push bp
+	; mov bp, sp
+	push ax
+	push bx
+	push cx
+	push dx
+	push si
+	push di
+	push es
+	push ss
+
+
+	push 640
+	call getRandom
+	mov ax, random
+	mov randomX, ax
+
+	push 480
+	call getRandom
+	mov ax, random
+	mov randomY, ax
+
+	push 16
+	call getRandom
+	mov ax, random
+	mov randomColor, ax
+
+
+	push randomX ; x
+	push randomY ; y
+	push 20  ; xd
+	push randomColor  ; color
+	call drawThromb
+
+	pop ss
+	pop es
+	pop di
+	pop si
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+
+	; mov sp, bp
+	; pop bp
+	ret
+drawRandomFigure endp

@@ -7,8 +7,8 @@ SetCursor proc
 	mov ax, 1h
 	int 33h
 	; get mouse place and status
-	;mov ax, 3h
-	;int 33h
+	; mov ax, 3h
+	; int 33h
 	ret
 SetCursor endp 
 
@@ -129,3 +129,31 @@ display_coords proc
 	int  21h         
 	ret
 display_coords endp
+
+
+
+checkColorPixel proc
+	push bp
+	mov bp, sp
+
+	mov ah, 0Dh
+	mov cx, [x_mouse] 
+	mov dx, [y_mouse]
+	int 10H ; AL = COLOR
+	cmp al, byte ptr randomColor
+	je noblack
+	jmp next
+noblack:
+	mov isNew, 1
+	jmp next
+next:
+	; push 500 ; start point x
+	; push 210 ; start point y
+	; push 60  ; width
+	; push 2   ; color
+	; call drawTriangle
+	mov sp, bp
+	pop bp
+	ret
+
+checkColorPixel endp
