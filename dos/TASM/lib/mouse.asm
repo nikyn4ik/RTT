@@ -108,7 +108,7 @@ display_coords proc
 	mov  dh, 0   ;Y.
 	int  10h
 ;CONVERT X TO STRING.
-	mov  ax, x ;AX = PARAMETER FOR NUMBER2STRING.                                              
+	mov  ax, x_mouse ;AX = PARAMETER FOR NUMBER2STRING.                                              
 	mov  si, offset numstr
 	call number2string                                              
 ;DISPLAY X.
@@ -120,7 +120,7 @@ display_coords proc
 	mov  dx, offset hyphen
 	int  21h 
 ;CONVERT Y TO STRING.
-	mov  ax, y ;AX = PARAMETER FOR NUMBER2STRING.                                              
+	mov  ax, y_mouse ;AX = PARAMETER FOR NUMBER2STRING.                                              
 	mov  si, offset numstr
 	call number2string                                              
 ;DISPLAY Y.  

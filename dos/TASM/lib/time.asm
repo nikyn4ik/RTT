@@ -131,3 +131,62 @@ DateTimeToString        proc
     ret     
 DateTimeToString endp
  
+
+
+delay proc
+    push ax
+    push bx
+    push cx
+    push dx
+
+
+    push bp
+    mov bp, sp
+
+    push si
+    push ax
+    push dx
+    mov ax, [bp+12] ; задержка передаётся сюда
+    mov dx, 10
+    mul dx
+
+    mov  si, ax
+    pop dx
+    pop ax
+    mov  ah, 0
+    int  1Ah
+    mov  bx, dx
+    add  bx, si
+delay_loop:
+    int  1ah
+    cmp  dx, bx
+    jne  delay_loop
+    pop  si
+    pop  dx
+
+    mov sp, bp
+    pop bp
+
+
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret 2
+delay endp
+
+
+getRandom proc
+
+xor ah,ah  ; ah = 0
+int 1Ah    ; returns in cx:dx ticks since midnight (18.2Hz ticks)
+; let's mix the cx:dx a bit together to get a bit more entropy out of it
+
+
+rol cx, 8
+mov dx, cx
+add dx, '0'
+call printString
+ret
+getRandom endp

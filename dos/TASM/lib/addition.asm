@@ -85,17 +85,6 @@ l1:
 	ret
 clearBuffer endp
 
-GetMouseState proc 
-	mov  ax, 3       ;SERVICE TO GET MOUSE STATE.
-	int  33h
-	ret
-GetMouseState endp 
-
-
-
-
-
-
 
 
 

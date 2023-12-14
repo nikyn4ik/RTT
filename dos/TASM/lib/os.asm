@@ -31,6 +31,65 @@ printSymbol proc ; напечатать символ
 printSymbol endp
 
 
+
+
+
+
+
+; printNumber proc
+; 	push ax
+; 	push bx
+; 	push cx
+; 	push dx
+
+; 	; amount iterations that happens into first loop 
+; 	xor cx, cx
+
+; 	.next_iter:
+; 		mov bx, 10 ; mov ebx 10
+; 		xor dx, dx ; mov null edx
+; 		div bx ; div on ebx eax
+; 		add dx, '0' ; convert to asci
+; 		push dx ; res push into stack
+; 		inc cx ; ecx++ 
+
+; 		cmp ax, 0
+; 		je .print_iter ; if eax == 0
+
+; 		jmp .next_iter
+; 	.print_iter:
+; 		;print msg, len
+
+; 		cmp cx, 0
+; 		je .close
+
+; 		pop ax
+; 		mov [ss1], ax
+; 		push cx ; that no erace increments
+; 		print ss1, 4
+; 		pop cx ; that no erace increments
+; 		dec cx
+; 		jmp .print_iter
+		
+; 	.close:
+; 		mov [ss2], byte 0xa 
+; 		print ss2, 2
+
+; 		;print byte '\n', 1
+; 		pop dx
+; 		pop cx
+; 		pop bx
+; 		pop ax
+; 		ret
+
+; printNumber endp
+
+
+
+
+
+
+
 createFile proc
 	push bp
 	mov bp, sp

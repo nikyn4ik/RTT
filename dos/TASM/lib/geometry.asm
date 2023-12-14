@@ -11,10 +11,12 @@ drawSquare proc
 
 	colcount:
 	inc cx
+
 	int 10h
 	cmp cx, [bp+6]   ; x end
 	JNE colcount
 
+	
 	mov cx, [bp+10]  ; reset to start of col
 	inc dx           ; next row
 	cmp dx, [bp+4]   ; y end
@@ -27,22 +29,53 @@ drawSquare endp
 
 
 
+drawCircle1 proc
+	push bp
+	mov bp, sp
+	; x^2 + y^2 = r^2
+	; y = sqrt( r^2 - x^2 )
+	
+	mov cx, 100       ; x
+	mov dx, 400       ; y
+
+	mov al, 13        ; color 
+	mov ah, 0ch       ; put pixel
+
+	mov di, 50  ; len
+	; y = ax + b
+
+@@loop2: ; @@ not work in this version
+	int 10h
+
+
+	cmp cx, 450
+	je @@quit2
+	jmp @@loop2
+
+@@quit2:
+
+
+	push cx
+	push dx
+
+
+	mov sp, bp
+	pop bp
+	RET
+drawCircle1 endp
+
+
 drawCircle proc
 	; mov ax,13h 
 	; int       10h                 ;mode 13h 
 	push      0a000h 
 	pop       es                  ;es in video segment 
-	mov       dx,160              ;Xc 
-	mov       di,100              ;Yc 
+	mov       dx,50               ;Xc 
+	mov       di,50               ;Yc 
 	mov       al,04h              ;Colour 
-	mov       bx,50               ;Radius 
+	mov       bx,50                ;Radius 
 	call      Circle              ;Draw circle 
-	mov       ah,0 
-	int       16h                 ;Wait for key 
-	mov       ax,3 
-	int       10h                 ;Mode 3 
-	mov       ah,4ch 
-	int       21h                 ;Terminate 
+
 
 ;*** Circle 
 ; dx= x coordinate center 
@@ -50,38 +83,48 @@ drawCircle proc
 ; bx= radius 
 ; al= colour 
 Circle:
-	mov       bp,0                ;X coordinate 
-	mov       si,bx               ;Y coordinate 
+	mov       bp,0                ; X coordinate 
+	mov       si,bx               ; Y coordinate 
 c00:
-	call      _8pixels            ;Set 8 pixels 
-	sub       bx,bp               ;D=D-X 
-	inc       bp                  ;X+1 
-	sub       bx,bp               ;D=D-(2x+1) 
-	jg        c01                 ;>> no step for Y 
-	add       bx,si               ;D=D+Y 
-	dec       si                  ;Y-1 
-	add       bx,si               ;D=D+(2Y-1) 
+	call      _8pixels            ; Set 8 pixels 
+	sub       bx,bp               ; D=D-X 
+	inc       bp                  ; X+1 
+	sub       bx,bp               ; D=D-(2x+1) 
+	jg        c01                 ; >> no step for Y 
+	add       bx,si               ; D=D+Y 
+	dec       si                  ; Y-1 
+	add       bx,si               ; D=D+(2Y-1) 
 c01: 
-	cmp       si,bp               ;Check X>Y 
-	jae       c00                 ;>> Need more pixels 
+	cmp       si,bp               ; Check X>Y 
+	jae       c00                 ; >> Need more pixels 
 	ret 
 _8pixels:
-	call      _4pixels            ;4 pixels 
+	call      _4pixels            ; 4 pixels 
 _4pixels:
-	xchg      bp,si               ;Swap x and y 
-	call      _2pixels            ;2 pixels 
+	xchg      bp, si               ; Swap x and y 
+	call      _2pixels            ; 2 pixels 
 _2pixels:
 	neg       si 
 	push      di 
 
-	add       di,si 
+	add       di, si 
+	push ax
+	push dx
+	mov ax, di
+	mov dx, 640
 	; imul di,320 
-	add       di, dx 
-	mov       es:[di+bp],al 
-	sub       di,bp 
+	imul dx
+
+	mov di, ax
+
+	pop dx
+	pop ax
+	add di, dx 
+	mov es:[di+bp], al 
+	sub di, bp 
 	stosb 
 	
-	pop       di 
+	pop di 
 
 
 
@@ -90,113 +133,248 @@ drawCircle endp
 
 
 drawTriangle proc
+	push bp
+	mov bp, sp
 
-	ret
+	mov cx, [bp+10]      ; x start
+	mov di, cx
+	mov si, cx         ; end gate si =>
+	add si, [bp+6]     ; x start + width = end 
+	mov dx, [bp+8]     ; y start
+	mov al, [bp+4]        ; color 
+	mov ah, 0ch      ; put pixel
+	mov bx, 0
+looph:
+	int 10h	
+	inc cx
+	cmp cx, si
+	JB looph
+	; push 1
+	; call delay
+
+	push ax    ; save ax
+	mov ax, dx ; dx содержит координату y
+	mov bl, 2  ; bl делитель
+	div bl     ; ah содержит остаток от деления ax на bl
+	; TEST dx, 4
+	cmp ah, 0
+	JZ evn
+	JNZ odd
+evn:
+	add di, 1  ; start gate x >
+	dec si     ; end gate x <
+odd:
+	dec dx     ; next start point y
+	mov cx, di ; next start point x
+
+	pop ax ; save ax
+
+	cmp si, cx
+	JE quit
+
+	jmp looph
+
+
+quit:
+	mov sp, bp
+	pop bp
+	ret 8
 drawTriangle endp
 
 
+
+
 drawThromb proc
-	jmp start
-start:
-	mov bx, x_value
-	sub decision, bx
-	mov al, colour  ; colour goes in al
+	push bp
+	mov bp, sp
+
+	mov cx, [bp+10] ; координата центра x
+	mov dx, [bp+8] ; координата центра y
+	mov si, 0
+	mov di, [bp+6] ; половина диаметра по оси x
+
+	push 0
+	push di
+	push si
+
+	mov al, [bp+4] ; цв
 	mov ah, 0ch
 
-drawcircle1:
-	mov al, colour  ; colour goes in al
-	mov ah, 0ch
 
-	mov cx, x_value ; Octonant 1
-	add cx, x_center ;( x_value + x_center,  y_value + y_center)
-	mov dx, y_value
-	add dx, y_center
+@@right_and_left:
+	push cx
+	sub cx, si
 	int 10h
+	pop cx
 
-	mov cx, x_value ; Octonant 4
-	neg cx
-	add cx, x_center ;( -x_value + x_center,  y_value + y_center)
+	push cx
+	add cx, si
 	int 10h
+	pop cx
 
-	mov cx, y_value ; Octonant 2
-	add cx, x_center ;( y_value + x_center,  x_value + y_center)
-	mov dx, x_value
-	add dx, y_center
-	int 10h
+	inc si
+	cmp si, di
+	jne @@right_and_left
 
-	mov cx, y_value ; Octonant 3
-	neg cx
-	add cx, x_center ;( -y_value + x_center,  x_value + y_center)
-	int 10h
 
-	mov cx, x_value ; Octonant 7
-	add cx, x_center ;( x_value + x_center,  -y_value + y_center)
-	mov dx, y_value
-	neg dx
-	add dx, y_center
-	int 10h
+	cmp [bp-2], 0
+	je @@decrease
+	jne @@increase
 
-	mov cx, x_value ; Octonant 5
-	neg cx
-	add cx, x_center ;( -x_value + x_center,  -y_value + y_center)
-	int 10h
-
-	mov cx, y_value ; Octonant 8
-	add cx, x_center ;( y_value + x_center,  -x_value + y_center)
-	mov dx, x_value
-	neg dx
-	add dx, y_center
-	int 10h
-
-	mov cx, y_value ;Octonant 6
-	neg cx
-	add cx, x_center ;( -y_value + x_center,  -x_value + y_center)
-	int 10h
-
-	inc y_value
-
-condition1:
-	cmp decision,0
-	ja condition2
-	mov cx, y_value
-	mov ax, 2
-	imul cx
-	add cx, 1
-	inc cx
-	add decision, cx
-	mov bx, y_value
-	mov dx, x_value
-	cmp bx, dx
-	ja readkey
-	jmp drawcircle1
-
-condition2:
-	dec x_value
-	mov cx, y_value
-	sub cx, x_value
-	mov ax, 2
-	imul cx
-	inc cx
-	add decision, cx
-	mov bx, y_value
-	mov dx, x_value
-	cmp bx, dx
-	ja readkey
-	jmp drawcircle1
+@@decrease:
+	dec dx
+	jmp @@next_step
+@@increase:
+	inc dx
+	jmp @@next_step
+	
+@@next_step:
+	push ax
+	push bx
+	mov ax, dx
+	mov bl, 2
+	div bl
+	cmp ah, 0
+	jz @@evn
+	jnz @@odd
+@@evn:
+	dec di
+@@odd:
+	mov si, [bp+14]
+	mov [bp+14], si
+	pop bx
+	pop ax
 
 
 
-;==========================
-readkey:
-	mov ah,00
-	int 16h ;wait for keypress
-;==========================
-endd:
-	mov ah,00 ;again subfunc 0
-	mov al,03 ;text mode 3
-	int 10h ;call int
-	mov ah,04ch
-	mov al,00 ;end program normally
-	int 21h 
-	ret
+	cmp si, di
+	je @@quit
+
+
+	jmp @@right_and_left
+
+
+
+@@quit:
+	cmp [bp-2], 1
+	jne @@two
+	je @@stop
+@@two:
+	mov [bp-2], 1
+	mov si, [bp-6]
+	mov di, [bp-4]
+	mov dx, [bp+8]
+	jmp @@right_and_left
+
+
+@@stop:
+	mov sp, bp
+	pop bp
+	RET 10
 drawThromb endp
+
+
+
+
+
+
+Plot proc
+	mov Ah, 0Ch		;Функция отрисовки точки
+	mov al, 1		;Цвет
+	int 10h			;Нарисовать точку
+	ret
+Plot endp
+
+drawCircle3 proc
+    mov xx, 0
+	mov ax, radius
+    mov yy, ax
+    mov delta, 2
+	mov ax, 2
+	mov dx, 0
+	imul yy
+	sub delta, ax
+	mov eror, 0
+	jmp ccicle
+finally: 
+	ret
+ccicle:
+	mov ax, yy
+	cmp ax, 0
+	jl  finally
+	mov cx, xx0
+	add cx, xx
+	mov dx, yy0
+	add dx, yy
+	call Plot
+    mov cx, xx0
+	add cx, xx
+	mov dx, yy0
+	sub dx, yy
+	call Plot
+	mov cx, xx0
+	sub cx, xx
+	mov dx, yy0
+	add dx, yy
+	call Plot
+	mov cx, xx0
+	sub cx, xx
+	mov dx, yy0
+	sub dx, yy
+	call Plot
+
+
+	mov ax, delta
+	mov eror, ax
+	mov ax, yy
+	add eror, ax
+	mov ax, eror
+	mov dx, 0
+	mov bx, 2
+	imul bx
+	sub ax, 1
+	mov eror, ax
+	cmp delta, 0
+	jg sstep
+	je sstep
+	cmp eror, 0
+	jg  sstep
+	inc xx
+	mov ax, 2
+	mov dx, 0
+	imul xx
+	add ax, 1
+	add delta, ax
+    jmp ccicle
+sstep:
+	mov ax, delta
+	sub ax, xx
+	mov bx, 2
+	mov dx, 0
+	imul bx
+	sub ax, 1
+	mov eror, ax
+	cmp delta, 0
+	jg tstep
+	cmp eror, 0
+	jg tstep
+	inc xx
+	mov ax, xx
+	sub ax, yy
+	mov bx, 2
+	mov dx, 0
+	imul bx
+	add delta, ax
+    dec yy
+	jmp ccicle
+tstep:
+	dec yy
+    mov ax, 2
+	mov dx, 0
+	imul yy
+	mov bx, 1
+	sub bx, ax
+	add delta, bx
+	jmp ccicle
+drawCircle3 endp
+
