@@ -14,15 +14,15 @@ SetCursor endp
 
 ;---------------------------------------              
 ;DRAW ONE PIXEL AT XCORDS1,YCORDS1.
-DotOne proc 
-	mov  ah, 0ch       ;SERVICE TO DRAW PIXEL.
-	mov  al, 14        ;YELLOW.
-	mov  bh, 0         ;VIDEO PAGE.
-	mov  cx, XCords1
-	mov  dx, YCords1
-	int  10h           ;BIOS SCREEN SERVICES.
-	ret
-DotOne endp 
+; DotOne proc 
+; 	mov  ah, 0ch       ;SERVICE TO DRAW PIXEL.
+; 	mov  al, 14        ;YELLOW.
+; 	mov  bh, 0         ;VIDEO PAGE.
+; 	mov  cx, XCords1
+; 	mov  dx, YCords1
+; 	int  10h           ;BIOS SCREEN SERVICES.
+; 	ret
+; DotOne endp 
 ;---------------------------------------              
 ;GET MOUSE CURSOR STATE.   
 ;RETURN : BX : BIT 0 = 0 : LEFT BUTTON PRESSED.
@@ -33,7 +33,7 @@ DotOne endp
 ;         DX = SCREEN ROW.
 
 GetMouseState proc 
-	mov  ax, 3       ;SERVICE TO GET MOUSE STATE.
+	mov  ax, 3       ;SERVICE TO GET MOUSE STATE. Определить состояние мыши
 	int  33h
 	ret
 GetMouseState endp 
@@ -69,6 +69,27 @@ cycle2:
 	ret
 number2string endp       
 
+num2str proc 
+	; call dollars ;FILL STRING WITH $.
+	mov  bx, 10  ;DIGITS ARE EXTRACTED DIVIDING BY 10.
+	mov  cx, 0   ;COUNTER FOR EXTRACTED DIGITS.
+_cycle1:       
+	mov  dx, 0   ;NECESSARY TO DIVIDE BY BX.
+	div  bx      ;DX:AX / 10 = AX:QUOTIENT DX:REMAINDER.
+	push dx      ;PRESERVE DIGIT EXTRACTED FOR LATER.
+	inc  cx      ;INCREASE COUNTER FOR EVERY DIGIT EXTRACTED.
+	cmp  ax, 0   ;IF NUMBER IS
+	jne  _cycle1  ;NOT ZERO, LOOP. 
+;NOW RETRIEVE PUSHED DIGITS.
+_cycle2:  
+	pop  dx        
+	add  dl, 48  ;CONVERT DIGIT TO CHARACTER.
+	mov  [ si ], dl
+	inc  si
+	loop _cycle2  
+
+	ret
+num2str endp    
 ;------------------------------------------
 ;FILLS VARIABLE "NUMSTR" WITH '$'.
 ;USED BEFORE CONVERT NUMBERS TO STRING, BECAUSE
@@ -147,11 +168,6 @@ noblack:
 	mov isNew, 1
 	jmp next
 next:
-	; push 500 ; start point x
-	; push 210 ; start point y
-	; push 60  ; width
-	; push 2   ; color
-	; call drawTriangle
 	mov sp, bp
 	pop bp
 	ret

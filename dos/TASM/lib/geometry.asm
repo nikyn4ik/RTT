@@ -284,13 +284,22 @@ drawThromb endp
 
 
 Plot proc
+	push bp
+	mov bp, sp
+
 	mov Ah, 0Ch		;Функция отрисовки точки
-	mov al, 1		;Цвет
+	mov al, [bp+4]		;Цвет
 	int 10h			;Нарисовать точку
+
+	mov sp, bp
+	pop bp
 	ret
 Plot endp
 
 drawCircle3 proc
+	push bp
+	mov bp, sp
+
     mov xx, 0
 	mov ax, radius
     mov yy, ax
@@ -301,33 +310,86 @@ drawCircle3 proc
 	sub delta, ax
 	mov eror, 0
 	jmp ccicle
+
 finally: 
-	ret
+
+	mov sp, bp
+	pop bp
+	ret 2
 ccicle:
 	mov ax, yy
 	cmp ax, 0
 	jl  finally
-	mov cx, xx0
-	add cx, xx
-	mov dx, yy0
-	add dx, yy
-	call Plot
+
     mov cx, xx0
 	add cx, xx
+	mov x1, cx
 	mov dx, yy0
 	sub dx, yy
-	call Plot
-	mov cx, xx0
-	sub cx, xx
-	mov dx, yy0
-	add dx, yy
-	call Plot
-	mov cx, xx0
-	sub cx, xx
-	mov dx, yy0
-	sub dx, yy
+	mov y1, dx
+	push [bp+4]
 	call Plot
 
+	mov cx, xx0
+	add cx, xx
+	mov x2, cx
+	mov dx, yy0
+	add dx, yy
+	mov y2, dx
+	push [bp+4]
+	call Plot
+
+
+qright1:
+	inc y1
+	mov cx, x1
+	mov dx, y1
+	push [bp+4]
+	call Plot
+
+	cmp dx, y2
+	jae qright2
+	jmp qright1
+
+qright2:
+
+
+
+	mov cx, xx0
+	sub cx, xx
+	mov x1, cx
+	mov dx, yy0
+	sub dx, yy
+	mov y1, dx
+	push [bp+4]
+	call Plot
+
+	mov cx, xx0
+	sub cx, xx
+	mov x2, cx
+	mov dx, yy0
+	add dx, yy
+	mov y2, dx
+	push [bp+4]
+	call Plot
+
+
+qleft1:
+	inc y1
+	mov cx, x1
+	mov dx, y1
+	push [bp+4]
+	call Plot
+
+	cmp dx, y2
+	jae qleft2
+	jmp qleft1
+
+qleft2:
+
+
+	; push 1
+	; call delay
 
 	mov ax, delta
 	mov eror, ax
@@ -383,51 +445,53 @@ tstep:
 	jmp ccicle
 drawCircle3 endp
 
-drawRandomFigure proc
-	; push bp
-	; mov bp, sp
-	push ax
-	push bx
-	push cx
-	push dx
-	push si
-	push di
-	push es
-	push ss
 
 
-	push 640
-	call getRandom
-	mov ax, random
-	mov randomX, ax
-
-	push 480
-	call getRandom
-	mov ax, random
-	mov randomY, ax
-
-	push 16
-	call getRandom
-	mov ax, random
-	mov randomColor, ax
+; drawRandomFigure proc
+; 	; push bp
+; 	; mov bp, sp
+; 	push ax
+; 	push bx
+; 	push cx
+; 	push dx
+; 	push si
+; 	push di
+; 	push es
+; 	push ss
 
 
-	push randomX ; x
-	push randomY ; y
-	push 20  ; xd
-	push randomColor  ; color
-	call drawThromb
+; 	push 640
+; 	call getRandom
+; 	mov ax, random
+; 	mov randomX, ax
 
-	pop ss
-	pop es
-	pop di
-	pop si
-	pop dx
-	pop cx
-	pop bx
-	pop ax
+; 	push 480
+; 	call getRandom
+; 	mov ax, random
+; 	mov randomY, ax
 
-	; mov sp, bp
-	; pop bp
-	ret
-drawRandomFigure endp
+; 	push 16
+; 	call getRandom
+; 	mov ax, random
+; 	mov randomColor, ax
+
+
+; 	push randomX ; x
+; 	push randomY ; y
+; 	push 20  ; xd
+; 	push randomColor  ; color
+; 	call drawThromb
+
+; 	pop ss
+; 	pop es
+; 	pop di
+; 	pop si
+; 	pop dx
+; 	pop cx
+; 	pop bx
+; 	pop ax
+
+; 	; mov sp, bp
+; 	; pop bp
+; 	ret
+; drawRandomFigure endp

@@ -1,121 +1,23 @@
 ; .386
+; 16 - битная программа запускать на dosbox
 .model small
-.stack 200
+.stack 200  ;стек (минимум 200 байт надо), но эта программа будет работать и так
 
 _STACK  segment para stack
-        db      1024 dup(?)
+    db 1024 dup(?) ; тоже размер стека
 _STACK  ends
 ; include class.asm
 
 
 
 _DATA segment; .data, DATASEG
-	m1 db "Start reading: $"
-	m1len equ $-m1                  ; способ получить длину m1 в байтах
-
-	m2 db "Hello World!", 0Dh, 0Ah
-	m2len equ $-m2
-
-	kiril db 13, 10, "Введите какое-нибудь число: $"
-	number db "f1234567890", 0Dh, 0Ah
-	number_len equ $-number
-	Data1 DB 48h,45h,4Ch,4Ch,4Fh,'$' ; создали массив $ - нуль терминатор
-	sym1 db 03h
-	dynamic_array DB 10h DUP (1)     ; динамический массив содержащий 10h значений
-	dynamic_array2 db 10h DUP (38h)
-
-	; для открытия файла
-	; FileName db '1.asm', 0h
-	OkStr db 'OK', '$'
-	errorOpenStr db 'The Error happen on opening file', '$'
-	errorReadStr db 'error on reading file', '$'
-	errorWriteStr db 'error on writing file', '$'
-	errorCloseStr db 'the Error on closig file', '$'
-	errorCreateStr db 'The error happen on creating file', '$'
-	successStr db 'All right', '$'
 	buffer db 200 DUP(0), '$'          ; буффер на 200 символов
 	buffer_len equ $-buffer
-
-
-	; struct1 strstr{} ; создание объектов структуры
-	; struct2 strstr{} ; создание объектов структуры
-
-	; cyn firstclass{} ; создание объекта класса
-	handle1 db 0
-
-	filename db 'out.txt', 0
-	inHandle dw ?
-
-	; это используется для тестов с файлами, это переменные в которых хранится название файлов
-	file1 db 'file1.txt', 0
-	file2 db 'file2.txt', 0
-	file3 db 'file3.txt', 0
-	file4 db 'file4.txt', 0
-
-	; для отрисовки ромба
-	x_center dw 50
-	y_center dw 75
-	y_value dw 0
-	x_value dw 10
-	decision dw 1
-	colour db 2 ; blue
-
-
-	; тут настройки для квадрата
-	xs dw 0 	; начальная точка (xs, ys)
-	ys dw 0
-	xe dw 50 	; конечная точка (xe, ye)
-	ye dw 50
-
-	color_square dw 14 	; цвет квадрата
+	results db 'results.txt', 0 
 
 
 	; для цикла
 	counter dw 0
-
-
-	; это используется для работы со временм, из этого много уберется, когда приведу программу в нормальный вид
-	;возможные цвета символов и фона
-    Black           equ     0
-    Blue            equ     1
-    Green           equ     2
-    Cyan            equ     3
-    Red             equ     4
-    Magenta         equ     5
-    Brown           equ     6
-    LightGray       equ     7
-    ;возможные цвета символов
-    DarkGray        equ     8
-    LightBlue       equ     9
-    LightGreen      equ     10
-    LightCyan       equ     11
-    LightRed        equ     12
-    LightMagenta    equ     13
-    Yellow          equ     14
-    White           equ     15
-
-    BkColor         equ     Cyan                    ;цвет фона
-    FrColor         equ     LightRed                ;цвет символа
-    Color           db      BkColor*16+FrColor
-
-    MsgTime         db      '00:00:00 '
-    MsgDate         db      '00/00/0000'
-    MsgLen          dw      $-MsgTime
-    ;позиция начала вывода строки
-    X               db      0
-    Y               db      0
-    ;параметры видеорежима
-    VideoMode       db      ?
-    VideoPage       db      ?
-    ;Дата и время
-    Day             db      ?
-    Month           db      ?
-    Year            dw      ?
-    Hours           db      ?
-    Minutes         db      ?
-    Seconds         db      ?
-
-    CrLf            db      0Dh, 0Ah, '$'
 
 
 	eror dw ?
@@ -129,13 +31,12 @@ _DATA segment; .data, DATASEG
 	; mouse
 	XCords1 dw 160        ;COORDS OF PIXEL AT
 	YCords1 dw 100        ;SCREEN CENTER.
-	score   dw 0
 	x_mouse       dw ?          ;MOUSE CLICK X.
 	y_mouse       dw ?          ;MOUSE CLICK Y.
-	msj     db 'score!$'
 	hyphen  db '-$'
 	clear   db '       $' ;CLEAR LINE.
-	numstr  db '$$$$$$'    ;STRING FOR 4 DIGITS.
+	numstr  db '$$$$$$'    ;STRING FOR 5 DIGITS.
+	numstr1 db 3 DUP (' '), 0Dh, 0Ah  ;STRING FOR 5 DIGITS.
 
 	random dw ?
 	randomX dw ?
@@ -143,11 +44,20 @@ _DATA segment; .data, DATASEG
 	randomColor dw ?
 	randomFigure dw ?
 
-	HelloString   DB   'HELLO1!',0dh,0ah,0
-
 	isNew db ?
 
 	game_point db 0
+	game_end_message db "Finish $" 
+	score db 20 ; попыток 
+
+	s1 dw 0
+	s2 dw 0
+
+	x1 dw 0 ; 
+	y1 dw 0
+
+	x2 dw 0
+	y2 dw 0
 
 _DATA ends
 
@@ -170,96 +80,32 @@ start: ; .startup
 
 
 
-	; без знака
-	; 8bit 
-	; mov cl, -3 ; #1
-	; mov bh, 2 ; #2
-	; mov al, bh
-	; mul cl ; #2 * #1 -> res in ax
 
-	; ; умножение
-	; mov ax, 200
-	; mul ax ; АХ*АХ —> DX:AX
-	; mov dx, ax
-	; add dx, '0'
+	; ставим временну метку в s1
+    mov ah, 2Ch ; команда для доступа к времени после неё в cl - запишется сколько сейчас минут, в dh - сколько сейчас секунд
+    int 21h
+    mov dl, 0
+    xchg dh, dl
 
+    xor ax, ax
+    xor bx, bx
+    mov al, cl
+    mov bl, 60
+    mul bl
+    add ax, dx
 
-
-	; call getRandom
-	; call exit
-
-
-	; call printSymbol
-	; call exit
-
-	; ; открыть существующий файл
-	; push offset file1
-	; call openFileR
-	; ; jc error ; 1
-
-	; ; прочитать фалй
-	; push ax
-	; call readFile
-	; ; jc error
-
-	; call closeFile
-	; ; jc error ; 2
+    mov s1, ax
+    mov si, offset numstr
+    call number2string
+    mov dx, offset numstr
+    call printString
 
 
-	; ; создать файл
-	; push offset file3
-	; call createFile
-	; ; jc error ; 3
+    ; call exit
 
-	; ; записать что-нибудь в файл
-	; push offset number ; то что будем записыват
-	; push 4             ; так передём в функцию сколько символов записать
-	; push bx            ; так передаём в функцию дескриптор файла
-	; call writeFile
-	; ; jc error
-
-	; call closeFile
-	; ; jc error
-
-
-
-	
-	; ; открыть существующий файл
-	; push offset file2 ; так передаём название файла
-	; call openFileRW ; открыть для чтения записи
-	; ; jc error
-	; mov bx, ax
-
-	; call appendToEndFile
-
-
-	; push offset m2
-	; push m2len
-	; push bx
-	; call writeFile
-
-	; call closeFile
-
-
-
-
-	
-	; mov ah, 00 ; subfunction 0
-	; mov al, 18h ; select mode 18 ;640 x 480
-	; int 10h    ; call graphics interrupt
-	; mov ax, 13h 
-	; int 10h                 ;mode 13h 
-
-	; call DotOne
-
-; проверяем нажали ли мы клавишу или нет и записываем координаты мыши в x_mouse, y_mouse
-
-	; call drawRandomFigure
-
-draw1:
 	call setResulutionVGA40 ;
 	call SetCursor ; mouse input
-
+draw1:
 	push 620
 	call getRandom
 	mov ax, random
@@ -270,9 +116,10 @@ draw1:
 	mov ax, random
 	mov randomY, ax
 
-	push 16
+	push 15
 	call getRandom
 	mov ax, random
+	inc ax
 	mov randomColor, ax
 
 	push 4
@@ -280,55 +127,56 @@ draw1:
 	mov ax, random
 	mov randomFigure, ax
 
+	; mov randomColor, 2
+	; jmp f3 ; (заменяем метку на которую хотим прыгать, например, если круг, то f3)
+	cmp randomFigure, 0
+	je f0 ; прыгнуть на метку с ромбом
 
 	cmp randomFigure, 1
-	je f0
+	je f1 ; прыгнуть на метку с квадратом
 
 	cmp randomFigure, 2
-	je f1
+	je f2 ; прыгнуть на метку с треугольником
 
 	cmp randomFigure, 3
-	je f2
+	je f3 ; прыгнуть на метку с кргом
 
-f0:
+f0: ; ромб
 	push randomX ; x
 	push randomY ; y
 	push 5  ; половина диагонали по оси y
 	push randomColor  ; color
-	call drawThromb
-	jmp fexit
-f1:
+	call drawThromb ; вызвать процедуру рисования ромба
+	jmp fexit ; прыгнуть без условия на fexit
+
+f1: ; квадрат
 	push randomColor ; color ; https://s7a1k3r.narod.ru/4.html
 	push randomX ; x
 	push randomY ; y
 	push 10 ; width
 	push 10; height
-	call drawSquare
-	jmp fexit
-f2:
+	call drawSquare ; вызвать процедуру рисования квадрата
+	jmp fexit ; прыгнуть без условия на fexit
+
+f2: ; треугольник
 	push randomX ; start point x
 	push randomY ; start point y
 	push 10  ; width
 	push randomColor   ; color
-	call drawTriangle
+	call drawTriangle ; вызвать процедуру рисования треугольника
+	jmp fexit ; прыгнуть без условия на fexit
+
+f3: ; круг
+	mov radius, 5 ; Радиус нашего круга.
+	mov ax, randomX
+	mov xx0, ax    ; Номер строки, в котором будет находится центр круга
+	mov ax, randomY
+	mov yy0, ax    ; Номер столбца, в котором будет находится центр круга
+	push randomColor
+	call DrawCircle3  ; вызвать процедуру рисования круга
+
 
 fexit:
-
-	; push 16
-	; call getRandom
-	; mov ax, random
-
-	; mov si, offset numstr
-	; call number2string
-	; mov dx, offset numstr
-	; call printString
-
-
-	; mov radius, 20 ; Радиус нашего круга.
-	; mov xx0, 180    ; Номер строки, в котором будет находится центр круга
-	; mov yy0, 180    ; Номер столбца, в котором будет находится центр круга
-	; call DrawCircle3
-
 
 
 ; проверяем нажали ли мы клавишу или нет и записываем координаты мыши в x_mouse, y_mouse
@@ -340,43 +188,110 @@ DotGame:
 
 	mov  x_mouse, cx          ;PRESERVE X AND Y BECAUSE
 	mov  y_mouse, dx          ;CX DX WILL BE DESTROYED.                  
-	; call display_coords
+
 	; push randomColor
 	call checkColorPixel
 
 	cmp isNew, 1
 	je ok1
+	; call display_coords
 	jmp DotGame
 
 ok1: ; успех мы нажали на фигурку
 	inc game_point
-	cmp game_point, 10
+	; jmp ScoreLabel
+	mov randomColor, 0
+
+	mov AX, 2 ; скрываем мышку
+	INT 33h
+	; mov         ax,000Ch
+ ;    mov         cx,0000h     ; удалить обработчик событий мыши
+ ;    int         33h
+    mov ax, 0B800h
+    mov ax, 0A000h
+    mov es, ax
+    xor di, di  ; ES:0 is the start of the framebuffer
+    xor ax, ax
+    mov cx, 32000d
+    cld
+    rep stosw
+
+	mov AX, 1 ; показываем мышку 
+	INT 33h
+	; call exit
+
+	mov dl, score
+	cmp game_point, dl ; тут количество фигур которое будет отображаться
 	je stop_game
 	mov isNew, 0 ; сброс чекпоинта
+
+
 	jmp draw1 ; рисуем новую фигуру
 	; jmp DotGame
 
 stop_game:
+    mov ah, 2Ch
+    int 21h
+    mov dl, 0
+    xchg dh, dl
+
+    xor ax, ax
+    xor bx, bx
+
+    mov al, cl
+    mov bl, 60
+    mul bl
+    add ax, dx
+    mov s2, ax
+
+    mov ax, s2
+    sub ax, s1
+    mov si, offset numstr1
+    call num2str
+
+	; открыть существующий файл
+	push offset results ; так передаём название файла
+	call openFileRW ; открыть для чтения записи
+	; jc error
+	mov bx, ax
+	call appendToEndFile
+	push offset numstr1
+	push 5
+	push bx
+	call writeFile
+	call closeFile
+
+
+
+	mov dx, offset game_end_message
+	call printString
 	call waitKey ; для задержки т.е. 
 	; cmp  bx, 01 ; check if left mouse was clicked
-	; je   Check_X_Cords
+	; je   Check_X_Cords2
 	; check if the player clicked the dot cords
 
+	call exit
+	
+ 	
+_TEXT ends
+
+end start
+
+
+
+; call drawCircle
+	; call drawCircle1
 ; ScoreLabel:
 ; 	inc [score]               
 ; 	;DISPLAY "SCORE!".
 ; 	mov ah, 9
 ; 	mov dx, offset msj
 ; 	int 21h
-; 	jmp DotGame       ; REPEAT.
-	; call drawCircle
-	; call drawCircle1
 
-
-
+; 	jmp DotGame
 
 	; if nothing happy
-	call exit
+
 
 
 	; push offset file1
@@ -558,8 +473,3 @@ stop_game:
 
  
  	; call exit
- 	
-_TEXT ends
-
-end start
-
