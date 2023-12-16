@@ -3,6 +3,7 @@
 
 ; 4-битные режимы (16 цветов):
 ; VGA
+
 setResulutionVGA40 proc
 	; 012h: 640x480 (64 Кб)
 	mov ah, 4fh
@@ -80,7 +81,7 @@ setResulutionVGA80 proc
 setResulutionVGA80 endp
 ; VBE
 setResulutionVBE81 proc
-	;Set video mode 800x600
+	; Установить мод 800x600
 	mov ah, 4fh
 	mov al, 02h
 	mov bh, 1h
@@ -91,7 +92,7 @@ setResulutionVBE81 endp
 
 
 setResulutionVBE82 proc
-	;Set video mode 1024x768
+	; Установить мод 1024x768
 	mov ah, 4fh
 	mov al, 02h
 	mov bh, 1h
@@ -102,7 +103,7 @@ setResulutionVBE82 endp
 
 
 setResulutionVBE83 proc
-	;Set video mode 1280x1024
+	; Установить мод 1280x1024
 	mov ah, 4fh
 	mov al, 02h
 	mov bh, 1h

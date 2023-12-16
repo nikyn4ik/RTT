@@ -1,167 +1,77 @@
 ;---------------------------------------        
 SetCursor proc 
-	;initialize the mouse
+	; Инициализация мыши
 	mov ax, 0h
 	int 33h
 	;show mouse
 	mov ax, 1h
 	int 33h
-	; get mouse place and status
+	; получить положением мыши и статус
 	; mov ax, 3h
 	; int 33h
 	ret
 SetCursor endp 
 
+       
 ;---------------------------------------              
-;DRAW ONE PIXEL AT XCORDS1,YCORDS1.
-; DotOne proc 
-; 	mov  ah, 0ch       ;SERVICE TO DRAW PIXEL.
-; 	mov  al, 14        ;YELLOW.
-; 	mov  bh, 0         ;VIDEO PAGE.
-; 	mov  cx, XCords1
-; 	mov  dx, YCords1
-; 	int  10h           ;BIOS SCREEN SERVICES.
-; 	ret
-; DotOne endp 
-;---------------------------------------              
-;GET MOUSE CURSOR STATE.   
-;RETURN : BX : BIT 0 = 0 : LEFT BUTTON PRESSED.
-;                    = 1 : LEFT BUTTON RELEASED.
-;            : BIT 1 = 0 : RIGHT BUTTON PRESSED.
-;                    = 1 : RIGHT BUTTON RELEASED.
-;         CX = SCREEN COLUMN.
-;         DX = SCREEN ROW.
-
+; Полуить положение курсора   
+; возврат : BX : бит 0 = 0 : нажата левая кнопка мыши.
+;                      = 1 : отпущена левая кнопка мыши.
+;            :   бит 1 = 0 : нажата правая кнопка мыши..
+;                      = 1 : отпущена правая кнопка мыши.
+;         CX = x.
+;         DX = y.
 GetMouseState proc 
-	mov  ax, 3       ;SERVICE TO GET MOUSE STATE. Определить состояние мыши
+	mov  ax, 3       ;Эта функция позволяет определить где пользователь кликнул мышкой. Определить состояние мыши
 	int  33h
 	ret
 GetMouseState endp 
 
+
+
 ;------------------------------------------
-;CONVERT A NUMBER IN STRING.
-;ALGORITHM : EXTRACT DIGITS ONE BY ONE, STORE
-;THEM IN STACK, THEN EXTRACT THEM IN REVERSE
-;ORDER TO CONSTRUCT STRING (STR).
-;PARAMETERS : AX = NUMBER TO CONVERT.
-;             SI = POINTING WHERE TO STORE STRING.
-;DESTROYED : AX, BX, CX, DX, SI.
+; Конверитируем число в троку 
+; Алгоритм : разбить число на цифры, сохранить из в стэк, затем перевернуть их 
+; чтобы записать в одну строку.
+; параметры : AX = число которое конвертируем.
+;             SI = указатель на строку, в которую запишем конвертируемое число, т.е. в эту строку мы запишем символы бывшего числа.
+; регистры которые изменятся : AX, BX, CX, DX, SI.
 
-number2string proc 
-	call dollars ;FILL STRING WITH $.
-	mov  bx, 10  ;DIGITS ARE EXTRACTED DIVIDING BY 10.
-	mov  cx, 0   ;COUNTER FOR EXTRACTED DIGITS.
-cycle1:       
-	mov  dx, 0   ;NECESSARY TO DIVIDE BY BX.
-	div  bx      ;DX:AX / 10 = AX:QUOTIENT DX:REMAINDER.
-	push dx      ;PRESERVE DIGIT EXTRACTED FOR LATER.
-	inc  cx      ;INCREASE COUNTER FOR EVERY DIGIT EXTRACTED.
-	cmp  ax, 0   ;IF NUMBER IS
-	jne  cycle1  ;NOT ZERO, LOOP. 
-;NOW RETRIEVE PUSHED DIGITS.
-cycle2:  
-	pop  dx        
-	add  dl, 48  ;CONVERT DIGIT TO CHARACTER.
-	mov  [ si ], dl
-	inc  si
-	loop cycle2  
 
-	ret
-number2string endp       
-
-num2str proc 
-	; call dollars ;FILL STRING WITH $.
-	mov  bx, 10  ;DIGITS ARE EXTRACTED DIVIDING BY 10.
-	mov  cx, 0   ;COUNTER FOR EXTRACTED DIGITS.
+num2str proc ; то число которое мы будем преобразовывать в строку уже записано в ax тут мы будем делить ax на bx
+	mov  bx, 10  ; чтобы преобразовать число в строку мы должны разобрать его по числам, для это го будем число делить на 10
+	mov  cx, 0   ; счётчик чисел в числе пример: 635 6,3,5 = 3 цифры в числе 635
 _cycle1:       
-	mov  dx, 0   ;NECESSARY TO DIVIDE BY BX.
-	div  bx      ;DX:AX / 10 = AX:QUOTIENT DX:REMAINDER.
-	push dx      ;PRESERVE DIGIT EXTRACTED FOR LATER.
-	inc  cx      ;INCREASE COUNTER FOR EVERY DIGIT EXTRACTED.
-	cmp  ax, 0   ;IF NUMBER IS
-	jne  _cycle1  ;NOT ZERO, LOOP. 
-;NOW RETRIEVE PUSHED DIGITS.
-_cycle2:  
-	pop  dx        
-	add  dl, 48  ;CONVERT DIGIT TO CHARACTER.
-	mov  [ si ], dl
-	inc  si
-	loop _cycle2  
+	mov  dx, 0   ; так как результат запишется по адресу DX:AX то мы обнуляем dx
+	div  bx      ; DX:AX / 10 = AX:целая часть DX:остаток. 
+	; В остатке как раз и будет одна цифра из числа 635: 635%10=5 635/10=63 -> в dx=5, ax=63; 
+	push dx      ; сохраняем цифру 5 в стэк чтобы потом записать его в строку.
+	inc  cx      ; увеличиваем счётчик в cx. Этот счётчик нужен именно для цикла loop.
+	cmp  ax, 0   ; если регист ax
+	jne  _cycle1  ; не равен нули цикл продолжается
 
-	ret
+; здесь мы берем цифры из стэка которые записали выше
+_cycle2:  ; это цикл работает пока cx не станет равен нулю. Сам цикл loop подразумевает что cx с каждой итерацией уменьшается
+	pop  dx ; достайм из стэка последнюю цифру которую туда записывали
+	add  dl, 48  ; это такой способ конвертировать цифру в символ: 2 -> '2'
+	mov  [ si ], dl ; как вы помните перед вызовом этой функции в si мы поместили адрес первого символа строки. 
+	; Теперь на этот адрес помещаем символ
+	inc  si ; смещаемя на второй адрес строки
+	loop _cycle2  ; пока cx не станет нулю
+
+	ret ; возвращаем управление в точку вызова
 num2str endp    
-;------------------------------------------
-;FILLS VARIABLE "NUMSTR" WITH '$'.
-;USED BEFORE CONVERT NUMBERS TO STRING, BECAUSE
-;THE STRING WILL BE DISPLAYED.
-;PARAMETER : SI = POINTING TO STRING TO FILL.
-;DESTROYED : BL, CX, DI.
-
-dollars proc              
-	mov  cx, 5
-	mov  di, offset numstr
-dollars_loop:      
-	mov  bl, '$'
-	mov  [ di ], bl
-	inc  di
-	loop dollars_loop
-
-	ret
-dollars endp       
-
-;------------------------------------------
-
-display_coords proc 
-;SEND CURSOR TO START OF UPPER LEFT.
-	mov  ah, 2   ;SERVICE TO SET CURSOR POSITION.
-	mov  bh, 0   ;VIDE PAGE.
-	mov  dl, 0   ;X.
-	mov  dh, 0   ;Y.
-	int  10h
-;CLEAR LINE.
-	mov  ah, 9
-	mov  dx, offset clear
-	int  21h
-;SEND CURSOR TO START OF UPPER LEFT.
-	mov  ah, 2   ;SERVICE TO SET CURSOR POSITION.
-	mov  bh, 0   ;VIDE PAGE.
-	mov  dl, 0   ;X.
-	mov  dh, 0   ;Y.
-	int  10h
-;CONVERT X TO STRING.
-	mov  ax, x_mouse ;AX = PARAMETER FOR NUMBER2STRING.                                              
-	mov  si, offset numstr
-	call number2string                                              
-;DISPLAY X.
-	mov  ah, 9
-	mov  dx, offset numstr
-	int  21h
-;"-".
-	mov  ah, 9
-	mov  dx, offset hyphen
-	int  21h 
-;CONVERT Y TO STRING.
-	mov  ax, y_mouse ;AX = PARAMETER FOR NUMBER2STRING.                                              
-	mov  si, offset numstr
-	call number2string                                              
-;DISPLAY Y.  
-	mov  ah, 9
-	mov  dx, offset numstr
-	int  21h         
-	ret
-display_coords endp
-
 
 
 checkColorPixel proc
 	push bp
 	mov bp, sp
 
-	mov ah, 0Dh
+	mov ah, 0Dh ; функция получения цвета по координатам
 	mov cx, [x_mouse] 
 	mov dx, [y_mouse]
-	int 10H ; AL = COLOR
-	cmp al, byte ptr randomColor
+	int 10H ; AL = цвет
+	cmp al, byte ptr randomColor ; такой приём позволяет сравнить 8бит регистр с 16 битной переменной, т.е. мы как бы преобразуем randomColor в 8 бит
 	je noblack
 	jmp next
 noblack:
@@ -173,3 +83,6 @@ next:
 	ret
 
 checkColorPixel endp
+
+
+;

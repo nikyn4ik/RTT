@@ -4,180 +4,77 @@ drawSquare proc
 	mov bp, sp
 
 
-	mov cx, [bp+10]  ; x start
-	mov dx, [bp+8]   ; y start
-	mov al, [bp+12]  ; color 
-	mov ah, 0ch      ; put pixel
+	mov cx, [bp+10]  ; получаем из буфера точку x, записываем в cx
+	mov dx, [bp+8]   ; получаем из буфера точку y, записываем в dx
+	mov al, [bp+12]  ; в al запишем цвет который отправили
+	mov ah, 0ch      ; функция рисования пикселя
 
-	mov si, [bp+6] ; x end - bp+6
-	add si, [bp+10]
-	mov di, [bp+4] ; y end - bp+4
-	add di, [bp+8]
+	mov si, [bp+6]  ; в si запишем ширину
+	add si, [bp+10] ; добавим к ширине точку старта: width + xstart
+	mov di, [bp+4]  ; в si запишем высоту
+	add di, [bp+8] 	; добавим к высоте точку старта: height + ystart
 
 	colcount:
-	inc cx
+	inc cx ; увеличиваем на 1 точку старта
 
-	int 10h
-	cmp cx, si   ; x end
-	JNE colcount
+	int 10h ; нарисовать
+	cmp cx, si   ;  пока точка старта не станет равна точке конца
+	JNE colcount ; пока не равно выполняется
 
 	
-	mov cx, [bp+10]  ; reset to start of col
-	inc dx           ; next row
-	cmp dx, di   ; y end
-	JNE colcount
+	mov cx, [bp+10]  ; сбросить cx в началоо т.е. x = точке старта x
+	inc dx           ; увеличиваем y ; плоскость в компьютерах идет: слева на прова, и сверху в низ
+	cmp dx, di   ; сравниваем y и вторую точку, которая конец
+	JNE colcount ; если не равно то продолжаем цикл
 
 	mov sp, bp
 	pop bp
-	ret 10
+	ret 10 ; размер каждого параметра в ms-dos равен 2 байтам: 16 битам
+	; в эту функцию передали 5 параметров, значит всего нужно вернуть 10 байт
 drawSquare endp
 
-
-
-drawCircle1 proc
-	push bp
-	mov bp, sp
-	; x^2 + y^2 = r^2
-	; y = sqrt( r^2 - x^2 )
-	
-	mov cx, 100       ; x
-	mov dx, 400       ; y
-
-	mov al, 13        ; color 
-	mov ah, 0ch       ; put pixel
-
-	mov di, 50  ; len
-	; y = ax + b
-
-@@loop2: ; @@ not work in this version
-	int 10h
-
-
-	cmp cx, 450
-	je @@quit2
-	jmp @@loop2
-
-@@quit2:
-
-
-	push cx
-	push dx
-
-
-	mov sp, bp
-	pop bp
-	RET
-drawCircle1 endp
-
-
-drawCircle proc
-	; mov ax,13h 
-	; int       10h                 ;mode 13h 
-	push      0a000h 
-	pop       es                  ;es in video segment 
-	mov       dx,50               ;Xc 
-	mov       di,50               ;Yc 
-	mov       al,04h              ;Colour 
-	mov       bx,50                ;Radius 
-	call      Circle              ;Draw circle 
-
-
-;*** Circle 
-; dx= x coordinate center 
-; di= y coordinate center 
-; bx= radius 
-; al= colour 
-Circle:
-	mov       bp,0                ; X coordinate 
-	mov       si,bx               ; Y coordinate 
-c00:
-	call      _8pixels            ; Set 8 pixels 
-	sub       bx,bp               ; D=D-X 
-	inc       bp                  ; X+1 
-	sub       bx,bp               ; D=D-(2x+1) 
-	jg        c01                 ; >> no step for Y 
-	add       bx,si               ; D=D+Y 
-	dec       si                  ; Y-1 
-	add       bx,si               ; D=D+(2Y-1) 
-c01: 
-	cmp       si,bp               ; Check X>Y 
-	jae       c00                 ; >> Need more pixels 
-	ret 
-_8pixels:
-	call      _4pixels            ; 4 pixels 
-_4pixels:
-	xchg      bp, si               ; Swap x and y 
-	call      _2pixels            ; 2 pixels 
-_2pixels:
-	neg       si 
-	push      di 
-
-	add       di, si 
-	push ax
-	push dx
-	mov ax, di
-	mov dx, 640
-	; imul di,320 
-	imul dx
-
-	mov di, ax
-
-	pop dx
-	pop ax
-	add di, dx 
-	mov es:[di+bp], al 
-	sub di, bp 
-	stosb 
-	
-	pop di 
-
-
-
-	ret
-drawCircle endp
 
 
 drawTriangle proc
 	push bp
 	mov bp, sp
 
-	mov cx, [bp+10]      ; x start
-	mov di, cx
-	mov si, cx         ; end gate si =>
-	add si, [bp+6]     ; x start + width = end 
-	mov dx, [bp+8]     ; y start
-	mov al, [bp+4]        ; color 
-	mov ah, 0ch      ; put pixel
-	mov bx, 0
+	mov cx, [bp+10]    ; x начало
+	mov di, cx         ; сохраняем значение x начала в di
+	mov si, cx         ; сохраняем значение x начала в si
+	add si, [bp+6]     ; x точка старта + ширина = конечная точка по оси x; тут мы записали число до которого будем рисовать пиксели по оси x
+	mov dx, [bp+8]     ; y точка начала
+	mov al, [bp+4]     ; в al запишем цвет
+	mov ah, 0ch        ; функция нарисовать пиксель
+	mov bx, 0          ; в bx записали ноль
 looph:
-	int 10h	
-	inc cx
-	cmp cx, si
+	int 10h	; нарисовать пиксель
+	inc cx  ; увеличить координату x
+	cmp cx, si ; пока x меньше конечной точки
 	JB looph
-	; push 1
-	; call delay
 
-	push ax    ; save ax
-	mov ax, dx ; dx содержит координату y
-	mov bl, 2  ; bl делитель
+
+	push ax    ; кладём в стэк значение регистра ax ; потому что этот регистр хранит функцию которая рисует пиксель и цвет пикселя
+	mov ax, dx ; запишем в ax координату y
+	mov bl, 2  ; запишем в bl 2
 	div bl     ; ah содержит остаток от деления ax на bl
 	; TEST dx, 4
 	cmp ah, 0
-	JZ evn
-	JNZ odd
+	JZ evn ; если остаток от деления 0
+	JNZ odd ; не ноль
 evn:
-	add di, 1  ; start gate x >
-	dec si     ; end gate x <
+	add di, 1  ; увеличиваем на 1 di который хранит самую левую точку равностороннего треугольник x
+	dec si     ; уменьшаем si на 1 который хранит самую правую точку равностороннего треугольник x
 odd:
-	dec dx     ; next start point y
-	mov cx, di ; next start point x
+	dec dx     ; уменьшаем y - поднимаемся вверх
+	mov cx, di ; изменяем стартовую точку x
 
-	pop ax ; save ax
+	pop ax ; достать последнее записанное в стэк число и записать его в ax
 
-	cmp si, cx
+	cmp si, cx ; если стартовая точка равна конечной точке, или мы дошли до вершины треугольника то выходим
 	JE quit
 
-	jmp looph
+	jmp looph ; иначе начинаем цикл заного
 
 
 quit:
@@ -194,16 +91,16 @@ drawThromb proc
 	mov bp, sp
 
 	mov cx, [bp+10] ; координата центра x
-	mov dx, [bp+8] ; координата центра y
+	mov dx, [bp+8]  ; координата центра y
 	mov si, 0
-	mov di, [bp+6] ; половина диаметра по оси x
+	mov di, [bp+6]  ; половина диаметра по оси x
 
 	push 0
 	push di
 	push si
 
-	mov al, [bp+4] ; цв
-	mov ah, 0ch
+	mov al, [bp+4]  ; цвет помещам в регистр al
+	mov ah, 0ch     ; нарисовать  пиксель
 
 
 @@right_and_left:
@@ -287,13 +184,13 @@ Plot proc
 	push bp
 	mov bp, sp
 
-	mov Ah, 0Ch		;Функция отрисовки точки
-	mov al, [bp+4]		;Цвет
-	int 10h			;Нарисовать точку
+	mov Ah, 0Ch		; Функция отрисовки точки
+	mov al, [bp+4]  ; Цвет
+	int 10h			; Нарисовать точку
 
 	mov sp, bp
 	pop bp
-	ret
+	ret 2
 Plot endp
 
 drawCircle3 proc
@@ -388,9 +285,6 @@ qleft1:
 qleft2:
 
 
-	; push 1
-	; call delay
-
 	mov ax, delta
 	mov eror, ax
 	mov ax, yy
@@ -445,53 +339,3 @@ tstep:
 	jmp ccicle
 drawCircle3 endp
 
-
-
-; drawRandomFigure proc
-; 	; push bp
-; 	; mov bp, sp
-; 	push ax
-; 	push bx
-; 	push cx
-; 	push dx
-; 	push si
-; 	push di
-; 	push es
-; 	push ss
-
-
-; 	push 640
-; 	call getRandom
-; 	mov ax, random
-; 	mov randomX, ax
-
-; 	push 480
-; 	call getRandom
-; 	mov ax, random
-; 	mov randomY, ax
-
-; 	push 16
-; 	call getRandom
-; 	mov ax, random
-; 	mov randomColor, ax
-
-
-; 	push randomX ; x
-; 	push randomY ; y
-; 	push 20  ; xd
-; 	push randomColor  ; color
-; 	call drawThromb
-
-; 	pop ss
-; 	pop es
-; 	pop di
-; 	pop si
-; 	pop dx
-; 	pop cx
-; 	pop bx
-; 	pop ax
-
-; 	; mov sp, bp
-; 	; pop bp
-; 	ret
-; drawRandomFigure endp

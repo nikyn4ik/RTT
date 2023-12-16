@@ -46,7 +46,7 @@ endm
 
 
 
-;Clearing screen
+; Очистка командной строки/терминала
 clearScreen proc
     ; MOV AH, 0 
     ; MOV AL, 2 
@@ -84,12 +84,3 @@ l1:
 	pop ax
 	ret
 clearBuffer endp
-
-
-
-
-getRandomNums proc
-
-
-	ret
-getRandomNums endp

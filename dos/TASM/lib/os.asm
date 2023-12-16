@@ -1,12 +1,10 @@
 ; создание процедур ; занимает меньше времени и больше памяти
+; в регистр dx должна быть помещена строка, примерно так: mov dx, offset [название строки]
 printString PROC ; напечатать массив байт
-    ; ARG string:WORD
-    ; MOV dx, [string]
-    ; print string
     MOV ah, 09h
     int 21h
 
-    ; new line
+    ; перевод на новую строку
 	MOV dl, 10
 	MOV ah, 02h
 	INT 21h
@@ -20,7 +18,7 @@ printString ENDP
 printSymbol proc ; напечатать символ
 	mov ah, 02h
 	int 21h
-    ; new line
+    ; перевод на новую строку
 	MOV dl, 10
 	MOV ah, 02h
 	INT 21h
@@ -30,73 +28,13 @@ printSymbol proc ; напечатать символ
 	RET
 printSymbol endp
 
-
-
-
-
-
-
-; printNumber proc
-; 	push ax
-; 	push bx
-; 	push cx
-; 	push dx
-
-; 	; amount iterations that happens into first loop 
-; 	xor cx, cx
-
-; 	.next_iter:
-; 		mov bx, 10 ; mov ebx 10
-; 		xor dx, dx ; mov null edx
-; 		div bx ; div on ebx eax
-; 		add dx, '0' ; convert to asci
-; 		push dx ; res push into stack
-; 		inc cx ; ecx++ 
-
-; 		cmp ax, 0
-; 		je .print_iter ; if eax == 0
-
-; 		jmp .next_iter
-; 	.print_iter:
-; 		;print msg, len
-
-; 		cmp cx, 0
-; 		je .close
-
-; 		pop ax
-; 		mov [ss1], ax
-; 		push cx ; that no erace increments
-; 		print ss1, 4
-; 		pop cx ; that no erace increments
-; 		dec cx
-; 		jmp .print_iter
-		
-; 	.close:
-; 		mov [ss2], byte 0xa 
-; 		print ss2, 2
-
-; 		;print byte '\n', 1
-; 		pop dx
-; 		pop cx
-; 		pop bx
-; 		pop ax
-; 		ret
-
-; printNumber endp
-
-
-
-
-
-
-
 createFile proc
 	push bp
 	mov bp, sp
 
     mov ah, 3Ch
-    mov al, 0         ; <<<< THIS IS AN ERROR: NEEDS TO BE CX=0
-    mov dx, [bp+4]
+    mov al, 0         ; если файл не создаётся: нужно перед вызовом сделать mov cx, 0
+    mov dx, [bp+4]    ; название файла
     int 21h
 
     mov sp, bp
@@ -157,13 +95,9 @@ readFile endp
 
 
 writeFile proc
-	push bp        ; Сохраняем bp. Для сохранения указателя на стек используется регистр bp,
+	push bp        ; Кладём bp в стэк. Для сохранения указателя на стек используется регистр bp,
 	mov bp, sp     ; bp записываем указатель на стек
-	; mov dl, [bp+6]     
-	; add dl, '0'   
-	; call printSymbol
-	; mov dx, [bp+8]                 
-	; call printString
+
 	mov ah, 40h    ; команда записи в файл
 	mov bx, [bp+4] ; дескриптор файла тоже из стэка, куда записывать данные из буфера
 	mov cx, [bp+6] ; берем из стэка количество символов, которые нужно заполнить
@@ -173,18 +107,17 @@ writeFile proc
 
 	mov sp, bp
 	pop bp
-	; call exit
 	RET 6
 writeFile endp
 
 
 appendToEndFile proc
-	; bx have to handle file
+	; bx должен содержать в себе дескриптор файла
 	mov ah, 42h  ; "lseek"
-	mov al, 2    ; position relative to end of file
-	; 0 = offset from beginning of file
-	; 1 = offset from current position (cx:dx is signed)
-	; 2 = offset from end of file (ditto)
+	mov al, 2    ; позиция относительно конца файла
+	; 0 = смещение относительно начала файла
+	; 1 = смещение относительно текущей позиции файла (cx:dx назначен)
+	; 2 = смещение относительно конца файла (cx:dx назначен)
 	mov cx, 0    ; offset MSW
 	mov dx, 0    ; offset LSW
 	int 21h
@@ -194,13 +127,13 @@ appendToEndFile endp
 
 appendToStartFile proc
 	; Начинает с начала файла перезаписывая всё на своём пути
-	mov ah, 42h  ; "lseek"
-	mov al, 0    ; position relative to end of file
-	; 0 = offset from beginning of file
-	; 1 = offset from current position (cx:dx is signed)
-	; 2 = offset from end of file (ditto)
-	mov cx, 0    ; offset MSW
-	mov dx, 0    ; offset LSW
+	mov ah, 42h  ; "lseek" Для изменения текущей позиции чтения-записи используется системный вызов lseek().
+	mov al, 0    ; смещение относительно начала файла
+	; 0 = смещение относительно начала файла
+	; 1 = смещение относительно текущей позицифайла (cx:dx назначен)
+	; 2 = смещение относительно конца файла (cx:dx назначен)
+	mov cx, 0    ; смещение относительно верхнего слова 
+	mov dx, 0    ; смещение относительно нижнего слова 
 	int 21h
 	ret
 appendToStartFile endp
