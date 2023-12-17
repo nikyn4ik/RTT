@@ -1,10 +1,10 @@
-; .386
+; .386 - 32 битная версия
 ; 16 - битная программа запускать на dosbox
 .model small
 .stack 200  ;стек (минимум 200 байт надо), но эта программа будет работать и так
 
 _STACK  segment para stack
-    db 1024 dup(?) ; тоже размер стека
+    db 1024 dup(?) 
 _STACK  ends
 
 
@@ -132,37 +132,37 @@ draw1:
 	je f3 ; прыгнуть на метку с кргом
 
 f0: ; ромб
-	push randomX ; x
-	push randomY ; y
-	push 5  ; половина диагонали по оси y
-	push randomColor  ; color
+	push randomX ; x начальная точка
+	push randomY ; y начальная точка
+	push 7  ; половина диагонали по оси x
+	push randomColor  ; цвет
 	call drawThromb ; вызвать процедуру рисования ромба
 	jmp fexit ; прыгнуть без условия на fexit
 
 f1: ; квадрат
-	push randomColor ; color ; https://s7a1k3r.narod.ru/4.html
-	push randomX ; x
-	push randomY ; y
-	push 10 ; width
-	push 10; height
+	push randomColor ; цвет ; https://s7a1k3r.narod.ru/4.html
+	push randomX ; x начальная точка
+	push randomY ; y начальная точка
+	push 14 ; ширина
+	push 14; высота
 	call drawSquare ; вызвать процедуру рисования квадрата
 	jmp fexit ; прыгнуть без условия на fexit
 
 f2: ; треугольник
-	push randomX ; start point x
-	push randomY ; start point y
-	push 10  ; width
-	push randomColor   ; color
+	push randomX ; начальная точка x
+	push randomY ; начальная точка y
+	push 14  ; ширина
+	push randomColor   ; цвет
 	call drawTriangle ; вызвать процедуру рисования треугольника
 	jmp fexit ; прыгнуть без условия на fexit
 
 f3: ; круг
-	mov radius, 5 ; Радиус нашего круга.
+	mov radius, 7 ; Радиус нашего круга.
 	mov ax, randomX
 	mov xx0, ax    ; Номер строки, в котором будет находится центр круга
 	mov ax, randomY
 	mov yy0, ax    ; Номер столбца, в котором будет находится центр круга
-	push randomColor
+	push randomColor ; цвет
 	call DrawCircle3  ; вызвать процедуру рисования круга
 
 
@@ -194,7 +194,7 @@ ok1: ; успех мы нажали на фигурку
     mov ax, 0B800h
     mov ax, 0A000h
     mov es, ax
-    xor di, di  ; ES:0  это начало framebufferа
+    xor di, di  ; ES:0  это начало фрэймбуфера
     xor ax, ax
     mov cx, 32000d
     cld

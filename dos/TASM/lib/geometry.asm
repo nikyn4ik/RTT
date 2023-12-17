@@ -86,7 +86,7 @@ drawTriangle endp
 
 
 
-drawThromb proc
+drawThromb proc ; рисуется также как и треугольник; он состоит из 2 треугольников которые вырастают из одной общей стороны
 	push bp
 	mov bp, sp
 
@@ -197,47 +197,49 @@ drawCircle3 proc
 	push bp
 	mov bp, sp
 
-    mov xx, 0
-	mov ax, radius
-    mov yy, ax
-    mov delta, 2
-	mov ax, 2
-	mov dx, 0
-	imul yy
-	sub delta, ax
-	mov eror, 0
-	jmp ccicle
+    mov xx, 0 ; в xx поместить 0
+	mov ax, radius ; в ax поместить radius
+    mov yy, ax ; в yy поместить ax
+    mov delta, 2 ; в delta поместить 2
+	mov ax, 2 ;	в ах поместить 2
+	mov dx, 0 ; в dх поместить 0
+	imul yy ; dx:ax = ax * yy ; imul умножение со знаком
+	sub delta, ax ; delta = delta - ax 
+	mov eror, 0 ; в error помещаем 0
+	jmp ccicle ; прыгаем без условий на метку ccicle
 
 finally: 
-
+	; завершение программы
 	mov sp, bp
 	pop bp
-	ret 2
+	ret 2 
 ccicle:
-	mov ax, yy
-	cmp ax, 0
-	jl  finally
+	mov ax, yy ; в ax помещаем yy
+	cmp ax, 0 ; сравниваем ax с нулём 
+	jl  finally ; если ax меньше 0 то прыгаем на метку 	finally
 
-    mov cx, xx0
-	add cx, xx
-	mov x1, cx
-	mov dx, yy0
-	sub dx, yy
-	mov y1, dx
-	push [bp+4]
-	call Plot
+	; первая точка сверху справа окружности
+    mov cx, xx0 ; поместить в cx, xx0
+	add cx, xx  ; прибавить к cx xx; cx = cx + xx
+	mov x1, cx  ; поместить в x1, cx
+	mov dx, yy0 ; поместить в dx, yy0
+	sub dx, yy  ; вычесть из dx, yy
+	mov y1, dx  ; поместить в y1 dx
+	push [bp+4] ; поместить в стек цвет для отрисовки - параметр функции
+	call Plot   ; вызвать отрисовку пикселей
 
-	mov cx, xx0
-	add cx, xx
-	mov x2, cx
-	mov dx, yy0
-	add dx, yy
-	mov y2, dx
-	push [bp+4]
-	call Plot
+	; первая точка снизу справа окружности
+	mov cx, xx0 ; поместить в xx0
+	add cx, xx  ; добавить к cx, xx
+	mov x2, cx  ; поместить в x2, cx
+	mov dx, yy0 ; поместить в dx, yy0
+	add dx, yy  ; прибавить к dx, yy
+	mov y2, dx  ; поместить в y2, dx
+	push [bp+4] ; поместить в стек цвет для отрисовки - параметр функции
+	call Plot   ; вызвать отрисовку пикселей
 
 
-qright1:
+qright1:           ; тут происходит заполнение окружности цветом между точкми x1, y1 и x2, y2 т.е.заполняется правая половина от центра вправо
 	inc y1
 	mov cx, x1
 	mov dx, y1
@@ -245,13 +247,13 @@ qright1:
 	call Plot
 
 	cmp dx, y2
-	jae qright2
+	jae qright2    ; если dx больше или равен y2 то завершаем цикл и прыгаем на qright2
 	jmp qright1
 
-qright2:
+qright2: ; то есть когда мы встаём на эту метку мы заполнили только одну линию вертикальную
 
 
-
+	; первая точка сверху справа окружности
 	mov cx, xx0
 	sub cx, xx
 	mov x1, cx
@@ -261,6 +263,7 @@ qright2:
 	push [bp+4]
 	call Plot
 
+	; первая точка снизу справа окружности
 	mov cx, xx0
 	sub cx, xx
 	mov x2, cx
@@ -271,7 +274,7 @@ qright2:
 	call Plot
 
 
-qleft1:
+qleft1: ; в этом цикле мы заполняем растояние между этими двумя точками но только от центра влево
 	inc y1
 	mov cx, x1
 	mov dx, y1
@@ -282,60 +285,60 @@ qleft1:
 	jae qleft2
 	jmp qleft1
 
-qleft2:
+qleft2: ; то есть когда мы встаём на эту метку мы заполнили только одну линию вертикальную
 
 
-	mov ax, delta
-	mov eror, ax
-	mov ax, yy
-	add eror, ax
-	mov ax, eror
-	mov dx, 0
-	mov bx, 2
-	imul bx
-	sub ax, 1
-	mov eror, ax
-	cmp delta, 0
-	jg sstep
-	je sstep
-	cmp eror, 0
-	jg  sstep
-	inc xx
-	mov ax, 2
-	mov dx, 0
-	imul xx
-	add ax, 1
-	add delta, ax
-    jmp ccicle
+	mov ax, delta ; помещаем в ax delta
+	mov eror, ax  ; помещаем в eror ax
+	mov ax, yy    ; помещаем в ax yy
+	add eror, ax  ; прибавляем к eror ax
+	mov ax, eror  ; в ax помещаем eror
+	mov dx, 0     ; в dx помещаем 0
+	mov bx, 2     ; в bx помещаем 2
+	imul bx       ; знаковое умножение ax на bx
+	sub ax, 1     ; уменьшаем ax на 1
+	mov eror, ax  ; помещаем в eror ax
+	cmp delta, 0  ; сравниваем delta и 0
+	jg sstep      ; если delta больше 0 прыгаем на sstep в отличии от ja может работать с отрицательными числами
+	je sstep      ; если delta равен 0 прыгаем на sstep
+	cmp eror, 0   ; сравниваем eror, 0
+	jg  sstep     ; если eror больше 0 то прыгаем на sstep
+	inc xx        ; увеличиваем xx на 1
+	mov ax, 2     ; помещаем в ax 2
+	mov dx, 0     ; помещаем в dx 0
+	imul xx       ; знаковое умножение. умножаем ax на xx
+	add ax, 1     ; в dx:ax будет результат ax*xx 
+	add delta, ax ; к delta прибавляем ax
+    jmp ccicle    ; прыгаем в самое начало возле метки finally
 sstep:
-	mov ax, delta
-	sub ax, xx
-	mov bx, 2
-	mov dx, 0
-	imul bx
-	sub ax, 1
-	mov eror, ax
-	cmp delta, 0
-	jg tstep
-	cmp eror, 0
-	jg tstep
-	inc xx
-	mov ax, xx
-	sub ax, yy
-	mov bx, 2
-	mov dx, 0
-	imul bx
-	add delta, ax
-    dec yy
-	jmp ccicle
+	mov ax, delta ; поместиь в ax delta
+	sub ax, xx    ; вычесть из ax xx
+	mov bx, 2     ; поместиь в bx 2
+	mov dx, 0     ; поместиь в dx 0
+	imul bx       ; знаковое умножение. ax * bx результат запишется в dx:ax
+	sub ax, 1     ; вычесть из ax 1
+	mov eror, ax  ; поместиь в eror ax
+	cmp delta, 0  ; сравниваем delta и 0
+	jg tstep      ; если delta больше 0 то прыгаем на tstep. JG может работать с отрицательными числами
+	cmp eror, 0   ; сравниваем eror, 0
+	jg tstep      ; если eror больше 0 то прыгаем на tstep. JG может работать с отрицательными числами
+	inc xx        ; увеличиваем xx на 1
+	mov ax, xx    ; поместить в ax xx
+	sub ax, yy    ; вычесть из ax yy
+	mov bx, 2     ; поместить в bx 2
+	mov dx, 0     ; поместить в dx 0
+	imul bx       ; dx:ax = ax*bx ;знаковое умножение
+	add delta, ax ; прибавить к delta ax
+    dec yy        ; уменьшить на 1 yy
+	jmp ccicle    ; прыгнуть на метку с самого начала после метки finally
 tstep:
-	dec yy
-    mov ax, 2
-	mov dx, 0
-	imul yy
-	mov bx, 1
-	sub bx, ax
-	add delta, bx
-	jmp ccicle
+	dec yy        ; уменьшить yy
+    mov ax, 2     ; поместить в ax 2
+	mov dx, 0     ; поместить в dx 0
+	imul yy       ; умножить ax на yy результат в dx:ax ; знаковое умножение
+	mov bx, 1     ; поместить в bx 1
+	sub bx, ax    ; вычесть из bx ax
+	add delta, bx ; добавить к delta bx
+	jmp ccicle    ; прыгаем в самое начало на метку ccicle после метки finally
 drawCircle3 endp
 
