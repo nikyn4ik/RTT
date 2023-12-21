@@ -1,23 +1,35 @@
-; .386 - 32 битная версия
-; 16 - битная программа запускать на dosbox
-.model small
-.stack 200  ;стек (минимум 200 байт надо), но эта программа будет работать и так
-
-_STACK  segment para stack
-    db 1024 dup(?) 
-_STACK  ends
+.model small ; модель памяти
+; https://devotes.narod.ru/Books/3/ch03_03b.htm - модели памяти
 
 
+; SMALL — код размещается в одном сегменте, 
+; а данные и стек — в другом (для их описания могут применяться разные сегменты, но объединенные в одну группу). 
+; Эту модель памяти также удобно использовать для создания программ на ассемблере;
+
+; эта упрощенная директива создания сегмента стэка
+.stack 200 ; указывам размер стэка
+
+
+; Стандартные директивы сегментации
+; Стандартно сегменты на языке Assembler описываются с помощью  директивы SEGMENT.
+; Синтаксическое описание сегмента представляет собой следующую конструкцию
+; <имя сегмента> SEGMENT [тип выравнивания] [тип комбинирования]
+;         [класс сегмента] [тип размера сегмента]
+; <тело сегмента>
+; <имя сегмента>  ENDS
+
+; Стандартные директивы сегментации
+_STACK segment para public 'stack'
+	db 1024 dup(?) ; выделяет 200 байт для системного стека.
+_STACK ends
+
+; Стандартные директивы сегментации
 _DATA segment; .data, DATASEG
 	buffer db 200 DUP(0), '$'          ; буффер на 200 символов
 	buffer_len equ $-buffer
 	results db 'results.txt', 0 
 
-
-	; для цикла
-	counter dw 0
-
-
+	; круг
 	eror dw ?
 	xx dw ?
 	yy dw ?
@@ -26,7 +38,7 @@ _DATA segment; .data, DATASEG
 	delta dw ?
 	radius dw ?
 
-	; mouse
+	; мышь
 	XCords1 dw 160        ; где будет находится
 	YCords1 dw 100        ; курсор при запуске
 	x_mouse dw ?          ; сюда запишем координату X клика мыши. ; ? - означает что переменная не инициализорованна
@@ -42,9 +54,9 @@ _DATA segment; .data, DATASEG
 
 	isNew db ?
 
-	game_point db 0
+	game_point db 0 ; счётчик пройденных уровней
 	game_end_message db "Finish $" 
-	score db 20 ; попыток 
+	score db 20 ; максимальное число попыток
 
 	s1 dw 0 ; певая запись времени
 	s2 dw 0 ; вторая запись времени
@@ -52,7 +64,7 @@ _DATA segment; .data, DATASEG
 	x1 dw 0 ; эти переменные используются для закрашивания окружности ; первая точка
 	y1 dw 0
 
-	x2 dw 0 ; вторая точка
+	x2 dw 0 ; для закрашивания 
 	y2 dw 0
 
 _DATA ends
@@ -60,16 +72,19 @@ _DATA ends
 
 
 
-_TEXT segment ; .code
-	include addition.asm ; подключаем файл с функциями, можно удалить эту строку и вставить содержимое включаемго файла
-	include geometry.asm ; функции с фигурами
-	include time.asm     ; хранит функции для работы со временем
-	include os.asm       ; создание, чтение, запись, дозапись
-	include res.asm      ; режимы для графики
-	include keyboard.asm ; все по работе с клавой
-	include mouse.asm    ; мышь
+; Стандартные директивы сегментации
+_TEXT segment ; .code - это упрощенная директива сегментации
+	include geometry.asm ; отрисовка геометрических фигур
+	include os.asm       ; работа с файлами, преобразование числа в строку, генератор случайных чисел
+	include res.asm      ; фключение графического режима
+	include keyboard.asm ; тут функция - нажмите любую клавишу чтобы выйти (waitKey)
+	include mouse.asm    ; мышь, проверка кликнутого пикселя
 
-	assume cs: _TEXT, ds: _DATA, es: _DATA, ss:_STACK
+
+	; С помощью директивы ASSUME можно сообщить транслятору, какой сегмент, 
+	; к какому сегментному регистру «привязан», или, говоря боле точно, 
+	; в каком сегментном регистре хранится адрес сегмента..
+	assume cs:_TEXT,ds:_DATA,es:_DATA,ss:_STACK
 start: ; .startup
 	mov ax, @data        ; установка в ds адреса
 	mov ds, ax           ; Для указания сегмента данных используется регистр DS
@@ -118,7 +133,7 @@ draw1:
 	mov randomFigure, ax
 
 	; mov randomColor, 2
-	; jmp f3 ; (заменяем метку на которую хотим прыгать, например, если круг, то f3)
+	; jmp f0 ; (заменяем метку на которую хотим прыгать, например, если круг, то f3)
 	cmp randomFigure, 0
 	je f0 ; прыгнуть на метку с ромбом
 
@@ -143,26 +158,26 @@ f1: ; квадрат
 	push randomColor ; цвет ; https://s7a1k3r.narod.ru/4.html
 	push randomX ; x начальная точка
 	push randomY ; y начальная точка
-	push 14 ; ширина
-	push 14; высота
+	push 14      ; ширина
+	push 14      ; высота
 	call drawSquare ; вызвать процедуру рисования квадрата
 	jmp fexit ; прыгнуть без условия на fexit
 
 f2: ; треугольник
-	push randomX ; начальная точка x
-	push randomY ; начальная точка y
-	push 14  ; ширина
+	push randomX       ; начальная точка x
+	push randomY       ; начальная точка y
+	push 14            ; ширина
 	push randomColor   ; цвет
-	call drawTriangle ; вызвать процедуру рисования треугольника
-	jmp fexit ; прыгнуть без условия на fexit
+	call drawTriangle  ; вызвать процедуру рисования треугольника
+	jmp fexit          ; прыгнуть без условия на fexit
 
 f3: ; круг
-	mov radius, 7 ; Радиус нашего круга.
+	mov radius, 7     ; Радиус нашего круга.
 	mov ax, randomX
-	mov xx0, ax    ; Номер строки, в котором будет находится центр круга
+	mov xx0, ax       ; Номер строки, в котором будет находится центр круга
 	mov ax, randomY
-	mov yy0, ax    ; Номер столбца, в котором будет находится центр круга
-	push randomColor ; цвет
+	mov yy0, ax       ; Номер столбца, в котором будет находится центр круга
+	push randomColor  ; цвет
 	call DrawCircle3  ; вызвать процедуру рисования круга
 
 
@@ -171,13 +186,13 @@ fexit:
 
 ; проверяем нажали ли мы клавишу или нет и записываем координаты мыши в x_mouse, y_mouse
 DotGame:
-	mov  bx, 0          ; Проверка на нажатие левой кнопки мыши (1 для проверки правой кноп).
+	mov  bx, 0              ; Проверка на нажатие левой кнопки мыши (1 для проверки правой кноп).
 	call GetMouseState
-	and  bx, 00000001b  ; Проверка первого бита (бит 0).
-	jz  DotGame        ; пока не кликнули левой кнопкой. повтор.
+	and  bx, 1              ; Проверка первого бита (бит 0).
+	jz  DotGame             ; пока не кликнули левой кнопкой. повтор.
 
-	mov  x_mouse, cx          ; сохраняем X и Y, потому что
-	mov  y_mouse, dx          ; CX DX будут изменены                 
+	mov  x_mouse, cx        ; сохраняем X и Y, потому что
+	mov  y_mouse, dx        ; CX DX будут изменены                 
 
 	call checkColorPixel
 
@@ -185,27 +200,20 @@ DotGame:
 	je ok1
 	jmp DotGame
 
-ok1: ; успех мы нажали на фигурку
+ok1:                         ; успех мы нажали на фигурку
 	inc game_point
 	mov randomColor, 0
 
-	mov AX, 2 ; скрываем мышку
-	INT 33h
-    mov ax, 0B800h
-    mov ax, 0A000h
-    mov es, ax
-    xor di, di  ; ES:0  это начало фрэймбуфера
-    xor ax, ax
-    mov cx, 32000d
-    cld
-    rep stosw
+	call hideMouse ; скрыть мышь
+	
+	call clearScreen ; очистить экран
 
-	mov AX, 1 ; показываем мышку 
-	INT 33h
+	call showMouse ; показать мышь
+
 
 	mov dl, score
 	cmp game_point, dl ; тут количество фигур которое будет отображаться
-	je stop_game
+	je stop_game ; если game_point равен dl, то прыгаем на stop_game, иначе записыаем isNew 0 и отрисовываем новую картинку
 	mov isNew, 0 ; сброс чекпоинта
 
 
@@ -216,25 +224,20 @@ stop_game:
     int 21h
     mov dl, 0
     xchg dh, dl
-
     xor ax, ax
     xor bx, bx
-
     mov al, cl
     mov bl, 60
     mul bl
     add ax, dx
     mov s2, ax
-
     mov ax, s2
     sub ax, s1
     mov si, offset numstr1
     call num2str
-
 	; открыть существующий файл
 	push offset results ; так передаём название файла
 	call openFileRW ; открыть для чтения записи
-	; jc error
 	mov bx, ax
 	call appendToEndFile
 	push offset numstr1
@@ -242,17 +245,12 @@ stop_game:
 	push bx
 	call writeFile
 	call closeFile
-
-
-
 	mov dx, offset game_end_message
 	call printString
 	call waitKey ; для задержки т.е. 
-
 	call exit
-	
- 	
-_TEXT ends
 
+_TEXT ends
 end start
+
 

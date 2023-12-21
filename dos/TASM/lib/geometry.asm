@@ -1,5 +1,5 @@
 
-drawSquare proc
+drawSquare proc ; квадрат
 	push bp
 	mov bp, sp
 
@@ -35,7 +35,7 @@ drawSquare endp
 
 
 
-drawTriangle proc
+drawTriangle proc ; треугольник
 	push bp
 	mov bp, sp
 
@@ -86,7 +86,7 @@ drawTriangle endp
 
 
 
-drawThromb proc ; рисуется также как и треугольник; он состоит из 2 треугольников которые вырастают из одной общей стороны
+drawThromb proc ; робм
 	push bp
 	mov bp, sp
 
@@ -180,7 +180,7 @@ drawThromb endp
 
 
 
-Plot proc
+Plot proc ; точка
 	push bp
 	mov bp, sp
 
@@ -193,7 +193,7 @@ Plot proc
 	ret 2
 Plot endp
 
-drawCircle3 proc
+drawCircle3 proc ; круг
 	push bp
 	mov bp, sp
 
